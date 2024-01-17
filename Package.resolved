@@ -1,0 +1,95 @@
+{
+  "pins" : [
+    {
+      "identity" : "anycodable",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Flight-School/AnyCodable",
+      "state" : {
+        "revision" : "862808b2070cd908cb04f9aafe7de83d35f81b05",
+        "version" : "0.6.7"
+      }
+    },
+    {
+      "identity" : "bigint",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/attaswift/BigInt.git",
+      "state" : {
+        "revision" : "0ed110f7555c34ff468e72e1686e59721f2b0da6",
+        "version" : "5.3.0"
+      }
+    },
+    {
+      "identity" : "cryptoswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/krzyzanowskim/CryptoSwift.git",
+      "state" : {
+        "revision" : "7892a123f7e8d0fe62f9f03728b17bbd4f94df5c",
+        "version" : "1.8.1"
+      }
+    },
+    {
+      "identity" : "curvelib.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tkey/curvelib.swift",
+      "state" : {
+        "branch" : "main",
+        "revision" : "988edd4208d4aa0b17f70a8e02acdb353aa4bd55"
+      }
+    },
+    {
+      "identity" : "fetch-node-details-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/torusresearch/fetch-node-details-swift",
+      "state" : {
+        "revision" : "d591af500f32ce3c88d04af9bb74d746585acfea",
+        "version" : "5.1.0"
+      }
+    },
+    {
+      "identity" : "socket.io-client-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/socketio/socket.io-client-swift",
+      "state" : {
+        "revision" : "175da8b5156f6b132436f0676cc84c2f6a766b6e",
+        "version" : "16.1.0"
+      }
+    },
+    {
+      "identity" : "starscream",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/daltoniam/Starscream",
+      "state" : {
+        "revision" : "ac6c0fc9da221873e01bd1a0d4818498a71eef33",
+        "version" : "4.0.6"
+      }
+    },
+    {
+      "identity" : "tkey-mpc-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tkey/tkey-mpc-swift",
+      "state" : {
+        "branch" : "fix_naming",
+        "revision" : "3b53a3e7f959f5744bebaec2758e379b2bbecd99"
+      }
+    },
+    {
+      "identity" : "torus-utils-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/torusresearch/torus-utils-swift",
+      "state" : {
+        "branch" : "feat/wrap-secp256",
+        "revision" : "08f3a8a0beeed706bfe6768af79255f5dd2a2932"
+      }
+    },
+    {
+      "identity" : "tss-client-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/torusresearch/tss-client-swift.git",
+      "state" : {
+        "branch" : "feat/replace-secp256k1",
+        "revision" : "8130a461e45a156dd10d51dbf838d0cb14389f25"
+      }
+    }
+  ],
+  "version" : 2
+}
