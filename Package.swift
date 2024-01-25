@@ -13,15 +13,19 @@ let package = Package(
             targets: ["mpc-kit-swift"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/torusresearch/tss-client-swift.git", branch: "feat/replace-secp256k1"),
-            .package(url: "https://github.com/tkey/tkey-mpc-swift", branch: "fix_naming"),
-        ],
+        .package(url: "https://github.com/torusresearch/tss-client-swift.git", from: "2.0.0"),
+        .package(url: "https://github.com/tkey/tkey-mpc-swift", branch: "fix_naming"),
+        .package(url: "https://github.com/torusresearch/customauth-swift-sdk", from: "7.0.0")
+    ],
+    
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "mpc-kit-swift",
-            dependencies: ["tss-client-swift", "tkey-mpc-swift"]
+            dependencies: ["tss-client-swift", 
+                .product(name: "tkey-mpc-swift", package: "tkey-mpc-swift" ),
+                .product(name: "CustomAuth", package: "customauth-swift-sdk")]
         ),
         .testTarget(
             name: "mpc-kit-swiftTests",

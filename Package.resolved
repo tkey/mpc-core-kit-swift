@@ -32,8 +32,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tkey/curvelib.swift",
       "state" : {
-        "branch" : "main",
-        "revision" : "988edd4208d4aa0b17f70a8e02acdb353aa4bd55"
+        "revision" : "85d17cc4fcc9ccf5f444a51d163b2f1671862621",
+        "version" : "0.1.0"
+      }
+    },
+    {
+      "identity" : "customauth-swift-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/torusresearch/customauth-swift-sdk",
+      "state" : {
+        "revision" : "57bd8dad1ab4b6c320945fdd84d09ea0f6f81486",
+        "version" : "7.0.0"
       }
     },
     {
@@ -43,6 +52,15 @@
       "state" : {
         "revision" : "d591af500f32ce3c88d04af9bb74d746585acfea",
         "version" : "5.1.0"
+      }
+    },
+    {
+      "identity" : "jwtdecode.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/auth0/JWTDecode.swift.git",
+      "state" : {
+        "revision" : "58af7278797871e460d79496621b3e5366b865b2",
+        "version" : "3.1.0"
       }
     },
     {
@@ -69,7 +87,7 @@
       "location" : "https://github.com/tkey/tkey-mpc-swift",
       "state" : {
         "branch" : "fix_naming",
-        "revision" : "3b53a3e7f959f5744bebaec2758e379b2bbecd99"
+        "revision" : "d34409ad309dbd2507e16bd90b592840870f0477"
       }
     },
     {
@@ -77,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/torusresearch/torus-utils-swift",
       "state" : {
-        "branch" : "feat/wrap-secp256",
-        "revision" : "08f3a8a0beeed706bfe6768af79255f5dd2a2932"
+        "branch" : "extension",
+        "revision" : "15991ab3b818f0cf3dea9e8c18da1016ae7bdc7d"
       }
     },
     {
@@ -86,8 +104,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/torusresearch/tss-client-swift.git",
       "state" : {
-        "branch" : "feat/replace-secp256k1",
-        "revision" : "8130a461e45a156dd10d51dbf838d0cb14389f25"
+        "revision" : "d1a35e3849ec90a64752d9b82ec91052f861ad65",
+        "version" : "2.0.0"
       }
     }
   ],
