@@ -14,9 +14,41 @@ import curveSecp256k1
 import BigInt
 
 
-public extension MpcSigningKit {
+extension MpcSigningKit {
+    
+    public func getTssPubKey () async throws -> Data {
+        guard let threshold_key = self.tkey else {
+            throw "Invalid tkey"
+        }
+        let selectedTag = try await TssModule.get_tss_tag(threshold_key: threshold_key)
+        let result = try await TssModule.get_tss_pub_key(threshold_key: threshold_key, tss_tag: selectedTag)
+        return Data(hex: result)
+    }
+    
+    
+    public func getTssPubKey () -> Data {
+        
+        let semaphore = DispatchSemaphore(value: 0)
+        var result : Data?
+        performAsyncOperation(completion: { myresult  in
+            result = myresult
+        })
+        semaphore.wait()
+        //gepoubkey
+        return result ?? Data([])
+    }
+    
+    
+    func performAsyncOperation(completion: @escaping (Data) -> Void) {
+        Task {
+            // Simulate an asynchronous operation
+            let result = try self.getTssPubKey()
+            completion(result)
+        }
+    }
+    
     /// Signing Data without hashing
-    func sign(message: Data) async throws -> Data {
+    public func tssSign(message: Data) async throws -> Data {
         guard let authSigs = self.authSigs else {
             throw TSSClientError("Invalid authSigns")
         }
@@ -51,6 +83,27 @@ public extension MpcSigningKit {
         return r.magnitude.serialize() + s.magnitude.serialize() + Data([v])
     }
     
+    public func tssSign (message: Data) -> Data {
+        
+        let semaphore = DispatchSemaphore(value: 0)
+        var result : Data?
+        performAsyncTssSignOperation(message: message, completion: { myresult  in
+            result = myresult
+        })
+        semaphore.wait()
+        //gepoubkey
+        return result ?? Data([])
+    }
+    
+    func performAsyncTssSignOperation(message:Data,  completion: @escaping (Data) -> Void) {
+        Task {
+            // Simulate an asynchronous operation
+            let result = try await self.tssSign(message: message )
+            completion(result)
+        }
+    }
+    
+    
     public func inputFactor (factorKey: String) async throws {
         guard let threshold_key = self.tkey else {
             throw "Invalid tkey"
@@ -66,23 +119,15 @@ public extension MpcSigningKit {
     }
     
     
-    func getTssPubKey () async throws -> String {
-        guard let threshold_key = self.tkey else {
-            throw "Invalid tkey"
-        }
-        let selectedTag = try await TssModule.get_tss_tag(threshold_key: threshold_key)
-        let result = try await TssModule.get_tss_pub_key(threshold_key: threshold_key, tss_tag: selectedTag)
-        return result
-    }
     
-    func createFactor() {
+    public func createFactor() {
         // check for index is same as factor key
         // create new factor if different index
         // copy if same index
     }
     
     
-    func deleteFactor ( deleteFactorPub: String, deleteFactorKey: String? = nil) async throws {
+    public func deleteFactor ( deleteFactorPub: String, deleteFactorKey: String? = nil) async throws {
         guard let threshold_key = self.tkey, let factorKey = self.factorKey, let sigs = self.authSigs else {
             throw "Invalid tkey"
         }
