@@ -9,7 +9,7 @@ import Foundation
 import tss_client_swift
 import tkey_mpc_swift
 import BigInt
-import curvelib_swift
+import curveSecp256k1
 
 func convertPublicKeyFormat ( publicKey: String, outFormat: PublicKeyEncoding ) throws -> String {
     let point = try KeyPoint(address: publicKey)
