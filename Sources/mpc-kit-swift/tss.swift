@@ -32,6 +32,7 @@ extension MpcSigningKit {
         var result : Data?
         performAsyncOperation(completion: { myresult  in
             result = myresult
+            semaphore.signal()
         })
         semaphore.wait()
         //gepoubkey
@@ -42,7 +43,8 @@ extension MpcSigningKit {
     func performAsyncOperation(completion: @escaping (Data) -> Void) {
         Task {
             // Simulate an asynchronous operation
-            let result = try self.getTssPubKey()
+            let result = await try self.getTssPubKey()
+            print (result)
             completion(result)
         }
     }
@@ -89,22 +91,29 @@ extension MpcSigningKit {
         var result : Data?
         performAsyncTssSignOperation(message: message, completion: { myresult  in
             result = myresult
+            semaphore.signal()
         })
-        semaphore.wait()
+        semaphore.wait(timeout: .now() + 100_000_000_000)
         //gepoubkey
         return result ?? Data([])
     }
     
     func performAsyncTssSignOperation(message:Data,  completion: @escaping (Data) -> Void) {
         Task {
-            // Simulate an asynchronous operation
-            let result = try await self.tssSign(message: message )
-            completion(result)
+            do {
+                
+                
+                // Simulate an asynchronous operation
+                let result = try await self.tssSign(message: message )
+                completion(result)
+            }catch {
+                completion(Data())
+            }
         }
     }
     
     
-    public func inputFactor (factorKey: String) async throws {
+    public mutating func inputFactor (factorKey: String) async throws {
         guard let threshold_key = self.tkey else {
             throw "Invalid tkey"
         }
@@ -113,8 +122,9 @@ extension MpcSigningKit {
         try await threshold_key.input_factor_key(factorKey: factorKey)
         let pk = try SecretKey(hex: factorKey)
         let deviceFactorPub = try pk.toPublic().serialize(compressed: true)
-        
         // setup tkey
+        try await threshold_key.reconstruct()
+        self.factorKey = factorKey
         // setup tss
     }
     
@@ -186,7 +196,9 @@ extension MpcSigningKit {
         
         let tssNonce = try TssModule.get_tss_nonce(threshold_key: tkey, tss_tag: selected_tag)
         
-        let publicKey = try await TssModule.get_tss_pub_key(threshold_key: tkey, tss_tag: selected_tag)
+        let compressed = try await TssModule.get_tss_pub_key(threshold_key: tkey, tss_tag: selected_tag)
+        
+        let publicKey = try curveSecp256k1.PublicKey(hex: compressed).serialize(compressed: false)
         
         let (tssIndex, tssShare) = try await TssModule.get_tss_share(threshold_key: tkey, tss_tag: selected_tag, factorKey: factorKey)
         
@@ -195,11 +207,12 @@ extension MpcSigningKit {
         }
         
         // generate a random nonce for sessionID
-        let randomKey = try BigUInt(  Data(hexString:  curveSecp256k1.SecretKey().serialize() )!)
+        let randomKey = try BigUInt(  Data(hexString:  curveSecp256k1.SecretKey().serialize() )! )
         let random = BigInt(sign: .plus, magnitude: randomKey) + BigInt(Date().timeIntervalSince1970)
-        let sessionNonce = Data ( hex:TSSHelpers.hashMessage(message: String(random)))
+        let sessionNonce = TSSHelpers.base64ToBase64url( base64: TSSHelpers.hashMessage(message: random.serialize().toHexString()))
+        
         // create the full session string
-        let session = TSSHelpers.assembleFullSession(verifier: verifier, verifierId: verifierId, tssTag: selected_tag, tssNonce: String(tssNonce), sessionNonce: sessionNonce.base64EncodedString())
+        let session = TSSHelpers.assembleFullSession(verifier: verifier, verifierId: verifierId, tssTag: selected_tag, tssNonce: String(tssNonce), sessionNonce: sessionNonce)
 
         let userTssIndex = BigInt(tssIndex, radix: 16)!
         // total parties, including the client
