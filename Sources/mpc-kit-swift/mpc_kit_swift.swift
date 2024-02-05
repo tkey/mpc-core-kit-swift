@@ -143,7 +143,7 @@ public struct MpcSigningKit  {
             throw "invalid metadata endpoint"
         }
         
-        let metadataEndpoint = metadatahost + "/metadata"
+        let metadataEndpoint = "https://" + metadatahost + "/metadata"
 
         self.nodeDetails = nodeDetails
         
