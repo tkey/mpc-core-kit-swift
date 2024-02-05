@@ -136,7 +136,14 @@ public struct MpcSigningKit  {
         let fnd = self.nodeDetailsManager
         let nodeDetails = try await fnd.getNodeDetails(verifier: verifierLocal, verifierID: verifierIdLocal)
         
-        self.metadataHostUrl = nodeDetails.getTorusNodeEndpoints()[0] + "/metadata/jrpc"
+        guard let host = nodeDetails.getTorusNodeEndpoints().first else {
+            throw "Invalid node"
+        }
+        guard let metadatahost = URL( string: host)?.host else {
+            throw "invalid metadata endpoint"
+        }
+        
+        let metadataEndpoint = metadatahost + "/metadata"
 
         self.nodeDetails = nodeDetails
         
@@ -162,7 +169,7 @@ public struct MpcSigningKit  {
         self.authSigs = sigs
         
         // create tkey
-        let storage_layer = try StorageLayer(enable_logging: true, host_url: self.metadataHostUrl, server_time_offset: 2)
+        let storage_layer = try StorageLayer(enable_logging: true, host_url: metadataEndpoint, server_time_offset: 2)
         
         let service_provider = try ServiceProvider(enable_logging: true, postbox_key: postboxkey, useTss: true, verifier: verifier, verifierId: verifierId, nodeDetails: nodeDetails)
         
