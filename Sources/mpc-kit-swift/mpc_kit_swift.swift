@@ -19,15 +19,13 @@ import curveSecp256k1
 public struct MpcSigningKit  {
 
     public var tkey : ThresholdKey?;
-    public var customAuth: CustomAuth;
-    
     
     public var selectedTag: String?;
     public var tssEndpoints: [String]?;
     public var authSigs: [String]?;
     public var verifier: String?;
     public var verifierId: String?;
-    public var factorKey: String?;
+    internal var factorKey: String?;
 //    public var tssNonce: Int32;
     
     public var nodeIndexes: [Int]?;
@@ -47,58 +45,81 @@ public struct MpcSigningKit  {
     
     private var option: CoreKitOptions;
     
+    internal var state : CoreKitState;
+    
     private var metadataHostUrl : String;
     
     // init
-    public init() {
-        self.option = .init(disableHashFactor: true , Web3AuthClientId: "clientIdtesting")
+    public init( web3AuthClientId : String , web3AuthNetwork: TorusNetwork ) {
+        self.option = .init(disableHashFactor: true , Web3AuthClientId: web3AuthClientId, network: web3AuthNetwork)
+        self.state = CoreKitState.init()
         
-        
-        self.network = .sapphire(.SAPPHIRE_DEVNET)
+        self.network = web3AuthNetwork
         
         self.torusUtils = TorusUtils( enableOneKey: true,
                                      network: self.network )
         
-        let sub = SubVerifierDetails(loginType: .web,
-                                     loginProvider: .google,
-                                     clientId: "221898609709-obfn3p63741l5333093430j3qeiinaa8.apps.googleusercontent.com",
-                                     verifier: "google-lrc",
-                                     redirectURL: "tdsdk://tdsdk/oauthCallback",
-                                     browserRedirectURL: "https://scripts.toruswallet.io/redirect.html"
-                                     )
-        
-        self.customAuth = CustomAuth( aggregateVerifierType: .singleLogin, aggregateVerifier: "google-lrc", subVerifierDetails: [sub], network: self.network, enableOneKey: true)
         
         self.nodeDetailsManager = NodeDetailManager(network: self.network)
         
         // will be overwrritten
         self.metadataHostUrl = "https://metadata.tor.us"
         
+        
     }
     
+//    private mutating func updateState( partialState :    ) {
+//        self.state = {
+//            self.state...,
+//            partialState,
+//        }
+//    }
     
-    public mutating func login () async throws {
+    
+    public func getDeviceMetadataShareIndex() throws -> String {
+        guard let shareIndex = self.state.deviceMetadataShareIndex else {
+            throw "share index not found"
+        }
+        return shareIndex
+    }
+    
+    public mutating func login (loginProvider: LoginProviders, verifier: String ) async throws -> KeyDetails {
+//        let sub = SubVerifierDetails( loginType: .web,
+//                                      loginProvider: .google,
+//                                      clientId: self.option.Web3AuthClientId,
+//                                      verifier: verifier,
+//                                      redirectURL: "tdsdk://tdsdk/oauthCallback",
+//                                      browserRedirectURL: "https://scripts.toruswallet.io/redirect.html"
+//                                     )
+        let sub = SubVerifierDetails( loginType: .web,
+                                      loginProvider: loginProvider,
+                                      clientId: self.option.Web3AuthClientId,
+                                      verifier: verifier,
+                                      redirectURL: "tdsdk://tdsdk/oauthCallback",
+                                      browserRedirectURL: "https://scripts.toruswallet.io/redirect.html"
+                                     )
+        let customAuth = CustomAuth( aggregateVerifierType: .singleLogin, aggregateVerifier: verifier, subVerifierDetails: [sub], network: self.network, enableOneKey: true)
+        
         let userData = try await customAuth.triggerLogin()
         return try await self.login(userData: userData)
     }
     
-    public mutating func loginWithJwt( params: IdTokenLoginParams  ) async throws {
-        
-        let verifier = self.customAuth.aggregateVerifier
-        
-        
-        let torusKey = try await customAuth.getTorusKey(verifier: params.verifier, verifierId: params.verifierId, idToken: params.idToken)
+//    public mutating func loginWithJwt( params: IdTokenLoginParams  ) async throws {
+//        let verifier = self.customAuth.aggregateVerifier
+//        
+//        
+//        let torusKey = try await customAuth.getTorusKey(verifier: params.verifier, verifierId: params.verifierId, idToken: params.idToken)
 //        let torusKeyData =  TorusKeyData.init(torusKey: torusKey, userInfo: [:])
 
 //        return try await self.login(userData: torusKeyData)
-    }
+//    }
     
     
     
     // login should return key_details
     // with factor key if new user
     // with required factor > 0 if existing user
-    private mutating func login (userData: TorusKeyData) async throws {
+    private mutating func login (userData: TorusKeyData) async throws -> KeyDetails {
         
         self.oauthKey = userData.torusKey.oAuthKeyData?.privKey
 
@@ -115,7 +136,7 @@ public struct MpcSigningKit  {
         let fnd = self.nodeDetailsManager
         let nodeDetails = try await fnd.getNodeDetails(verifier: verifierLocal, verifierID: verifierIdLocal)
         
-//        self.metadataHostUrl = nodeDetails.getTorusNodeEndpoints()[0] + "/metadata/jrpc"
+        self.metadataHostUrl = nodeDetails.getTorusNodeEndpoints()[0] + "/metadata/jrpc"
 
         self.nodeDetails = nodeDetails
         
@@ -143,9 +164,6 @@ public struct MpcSigningKit  {
         // create tkey
         let storage_layer = try StorageLayer(enable_logging: true, host_url: self.metadataHostUrl, server_time_offset: 2)
         
-//        let tssEndpoint = nodeDetails.torusNodeTSSEndpoints
-//        self.tssEndpoints = tssEndpoint
-        
         let service_provider = try ServiceProvider(enable_logging: true, postbox_key: postboxkey, useTss: true, verifier: verifier, verifierId: verifierId, nodeDetails: nodeDetails)
         
         let rss_comm = try RssComm()
@@ -158,12 +176,12 @@ public struct MpcSigningKit  {
 
         let key_details = try await thresholdKey.initialize(never_initialize_new_key: false, include_local_metadata_transitions: false)
 
-        print(key_details.total_shares)
-        print(key_details.required_shares)
-        print(key_details.pub_key)
-        let totalShares = Int(key_details.total_shares)
-        let threshold = Int(key_details.threshold)
-        let tkeyInitalized = true
+//        print(key_details.total_shares)
+//        print(key_details.required_shares)
+//        print(key_details.pub_key)
+//        let totalShares = Int(key_details.total_shares)
+//        let threshold = Int(key_details.threshold)
+//        let tkeyInitalized = true
         
         // public key of the metadatakey
 //        let metadataPublicKey = try key_details.pub_key.getPublicKey(format: .EllipticCompress)
@@ -171,55 +189,32 @@ public struct MpcSigningKit  {
         self.tkey = thresholdKey
         
         if key_details.required_shares > 0 {
-            return try await self.existingUser()
+            try await self.existingUser()
         } else {
-            return try await self.newUser()
+            try await self.newUser()
         }
+        // to modify to corekit details
+        return try thresholdKey.get_key_details()
         
     }
     
-    private func existingUser() async throws {
+    private mutating func existingUser() async throws {
         guard let threshold_key = self.tkey else {
             throw "Invalid tkey"
         }
         
-        // exising user
-        // TODO HERE CONTINUE
-        // MANAGED TO LOGIN VIA OAUTH
-        // TRY RECOVER USING OAUTH HASH FACTOR -> RECONSTRUCT
-        
-        // HANDLE FOR NOT ENOUGH SHARE
-        
         // try check for hash factor
         if ( self.option.disableHashFactor == false) {
             let factorKey = self.getHashKey()
-            
-            
+
             // input hash factor
-            // update state
-            
-            
-            //        let allTags = try threshold_key.get_all_tss_tags()
-            let tag = "default" // allTags[0]
-            let reconstructionDetails = try await threshold_key.reconstruct()
-            
-            //        let metadataKey = reconstructionDetails.key
-            //        let tkeyReconstructed = true
-            //        let resetAccount = false
-        } else {
-            // return key_details
-            
+            do {
+                try await self.inputFactor(factorKey: factorKey)
+                let _ = try await self.tkey?.reconstruct()
+            } catch {
+                // unable to recover via hashFactor
+            }
         }
-        // check if default in all tags else ??
-//        let tssPublicKey = try await TssModule.get_tss_pub_key(threshold_key: threshold_key, tss_tag: tag )
-
-//        let defaultTssShareDescription = try threshold_key.get_share_descriptions()
-
-        
-        // else return keyDetails
-        
-//        let metadataDescription = "\(defaultTssShareDescription)"
-//        print(defaultTssShareDescription)
     }
     
     private mutating func newUser () async throws {
@@ -227,9 +222,7 @@ public struct MpcSigningKit  {
             throw "Invalid tkey"
         }
         
-        guard (try? await tkey.reconstruct()) != nil else {
-            throw "unable to recontruct tkey"
-        }
+        let _ = try await tkey.reconstruct()
 
         // TSS Module Initialize - create default tag
         // generate factor key or use oauthkey hash as factor
@@ -250,8 +243,6 @@ public struct MpcSigningKit  {
         let defaultTag = "default"
         try await TssModule.create_tagged_tss_share(threshold_key: tkey, tss_tag: defaultTag, deviceTssShare: nil, factorPub: factorPub, deviceTssIndex: tssIndex, nodeDetails: self.nodeDetails!, torusUtils: self.torusUtils)
 
-//        let tssPublicKey = try await TssModule.get_tss_pub_key(threshold_key: tkey, tss_tag: defaultTag)
-
         // finding device share index
         var shareIndexes = try tkey.get_shares_indexes()
         shareIndexes.removeAll(where: {$0 == "1"})
@@ -266,24 +257,17 @@ public struct MpcSigningKit  {
             "dateAdded": Date().timeIntervalSince1970
         ] as [String: Codable]
         
+        
         let jsonStr = try factorDescription(dataObj: description)
 
         try await tkey.add_share_description(key: factorPub, description: jsonStr )
 
-        let reconstructionDetails = try await tkey.reconstruct()
-
-        let metadataKey = reconstructionDetails.key
-        let tkeyReconstructed = true
-        let resetAccount = false
-        
-        //
         self.factorKey = factorKey;
         
         let selectedTag = try TssModule.get_tss_tag(threshold_key: tkey)
        
         self.publicKey = try await TssModule.get_tss_pub_key(threshold_key: tkey, tss_tag: selectedTag)
         
-        // return key_details
     }
     
     
@@ -308,6 +292,23 @@ public struct MpcSigningKit  {
 
     private func getHashKey () -> String {
         return Data(hex: self.oauthKey! + self.option.Web3AuthClientId ).sha512().hexString
+    }
+    
+    public mutating func inputFactor (factorKey: String) async throws {
+        guard let threshold_key = self.tkey else {
+            throw "Invalid tkey"
+        }
+        // input factor
+        
+        try await threshold_key.input_factor_key(factorKey: factorKey)
+        let pk = try SecretKey(hex: factorKey)
+        
+        // try using better methods ?
+        self.state.deviceMetadataShareIndex = try await  TssModule.find_device_share_index(threshold_key: threshold_key, factor_key: factorKey)
+//        let deviceFactorPub = try pk.toPublic().serialize(compressed: true)
+        // setup tkey ( assuming only 2 factor is required)
+        let _ = try await threshold_key.reconstruct()
+        self.factorKey = factorKey
     }
     
 // retrieve from keychain

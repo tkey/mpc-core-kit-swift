@@ -13,6 +13,7 @@ import tkey_mpc_swift
 import curveSecp256k1
 import BigInt
 
+let semaphoreTimeout = 100_000_000_000
 
 extension MpcSigningKit {
     
@@ -20,7 +21,7 @@ extension MpcSigningKit {
         guard let threshold_key = self.tkey else {
             throw "Invalid tkey"
         }
-        let selectedTag = try await TssModule.get_tss_tag(threshold_key: threshold_key)
+        let selectedTag = try TssModule.get_tss_tag(threshold_key: threshold_key)
         let result = try await TssModule.get_tss_pub_key(threshold_key: threshold_key, tss_tag: selectedTag)
         return Data(hex: result)
     }
@@ -43,7 +44,7 @@ extension MpcSigningKit {
     func performAsyncOperation(completion: @escaping (Data) -> Void) {
         Task {
             // Simulate an asynchronous operation
-            let result = await try self.getTssPubKey()
+            let result = try await self.getTssPubKey()
             print (result)
             completion(result)
         }
@@ -93,7 +94,8 @@ extension MpcSigningKit {
             result = myresult
             semaphore.signal()
         })
-        semaphore.wait(timeout: .now() + 100_000_000_000)
+        let _ = semaphore.wait(timeout: .now() + 100_000_000_000)
+        
         //gepoubkey
         return result ?? Data([])
     }
@@ -101,8 +103,6 @@ extension MpcSigningKit {
     func performAsyncTssSignOperation(message:Data,  completion: @escaping (Data) -> Void) {
         Task {
             do {
-                
-                
                 // Simulate an asynchronous operation
                 let result = try await self.tssSign(message: message )
                 completion(result)
@@ -112,30 +112,11 @@ extension MpcSigningKit {
         }
     }
     
-    
-    public mutating func inputFactor (factorKey: String) async throws {
-        guard let threshold_key = self.tkey else {
-            throw "Invalid tkey"
-        }
-        // input factor
-        
-        try await threshold_key.input_factor_key(factorKey: factorKey)
-        let pk = try SecretKey(hex: factorKey)
-        let deviceFactorPub = try pk.toPublic().serialize(compressed: true)
-        // setup tkey
-        try await threshold_key.reconstruct()
-        self.factorKey = factorKey
-        // setup tss
-    }
-    
-    
-    
     public func createFactor() {
         // check for index is same as factor key
         // create new factor if different index
         // copy if same index
     }
-    
     
     public func deleteFactor ( deleteFactorPub: String, deleteFactorKey: String? = nil) async throws {
         guard let threshold_key = self.tkey, let factorKey = self.factorKey, let sigs = self.authSigs else {
@@ -153,7 +134,7 @@ extension MpcSigningKit {
     }
     
     private func copyFactor ( newFactorKey: String, tssShareIndex: Int32 ) async throws {
-        guard let threshold_key = self.tkey, let factorKey = self.factorKey, let sigs = self.authSigs else {
+        guard let threshold_key = self.tkey, let factorKey = self.factorKey else {
             throw "Invalid tkey"
         }
         let selectedTag = try TssModule.get_tss_tag(threshold_key: threshold_key)
@@ -162,7 +143,7 @@ extension MpcSigningKit {
         let newFactorPub = try newkey.toPublic().serialize(compressed: true)
         
         // backup metadata share with factorkey
-        let shareIndex = try await TssModule.find_device_share_index(threshold_key: threshold_key, factor_key: factorKey)
+        let shareIndex = try self.getDeviceMetadataShareIndex()
         try TssModule.backup_share_with_factor_key(threshold_key: threshold_key, shareIndex: shareIndex, factorKey: newFactorKey)
         
         try await TssModule.copy_factor_pub(threshold_key: threshold_key, tss_tag: selectedTag, factorKey: factorKey, newFactorPub: newFactorPub, tss_index: tssShareIndex)
@@ -178,7 +159,7 @@ extension MpcSigningKit {
         let newFactorPub = try newkey.toPublic().serialize(compressed: true)
         
         // backup metadata share with factorkey
-        let shareIndex = try await TssModule.find_device_share_index(threshold_key: threshold_key, factor_key: factorKey)
+        let shareIndex = try self.getDeviceMetadataShareIndex()
         try TssModule.backup_share_with_factor_key(threshold_key: threshold_key, shareIndex: shareIndex, factorKey: newFactorKey)
         
         try await TssModule.add_factor_pub(threshold_key: threshold_key, tss_tag: selectedTag, factor_key: factorKey, auth_signatures: sigs, new_factor_pub: newFactorPub, new_tss_index: tssShareIndex, nodeDetails: nodeDetails!, torusUtils: torusUtils)

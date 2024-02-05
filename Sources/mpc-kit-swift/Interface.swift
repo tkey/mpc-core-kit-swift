@@ -6,13 +6,20 @@
 //
 
 import Foundation
-
+import CommonSources
+import tkey_mpc_swift
 
 public struct CoreKitOptions {
     public var disableHashFactor : Bool
     public var Web3AuthClientId : String
+    public var network : TorusNetwork
 }
 
+
+public struct CoreKitState {
+    // share index used for backup share recovery
+    public var deviceMetadataShareIndex: String?
+}
 
 public struct IdTokenLoginParams {
   /**
