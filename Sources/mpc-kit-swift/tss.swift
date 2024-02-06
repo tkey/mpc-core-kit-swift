@@ -13,8 +13,6 @@ import tkey_mpc_swift
 import curveSecp256k1
 import BigInt
 
-let semaphoreTimeout = 100_000_000_000
-
 extension MpcSigningKit {
     
     public func getTssPubKey () async throws -> Data {
@@ -36,7 +34,6 @@ extension MpcSigningKit {
             semaphore.signal()
         })
         semaphore.wait()
-        //gepoubkey
         return result ?? Data([])
     }
     
@@ -112,10 +109,42 @@ extension MpcSigningKit {
         }
     }
     
-    public func createFactor() {
+    
+    /// * A BN used for encrypting your Device/ Recovery TSS Key Share. You can generate it using `generateFactorKey()` function or use an existing one.
+    ///
+    /// factorKey?: BN;
+    /// Setting the Description of Share - Security Questions, Device Share, Seed Phrase, Password Share, Social Share, Other. Default is Other.
+    ///
+    /// shareDescription?: FactorKeyTypeShareDescription;
+    ///  * Additional metadata information you want to be stored alongside this factor for easy identification.
+    /// additionalMetadata?: Record<string, string>;
+    public func createFactor( tssShareIndex: TssShareType, factorKey: String?, factorDescription: FactorDescriptionTypeModule, additionalMetadata: [String: Codable] = [:]) async throws {
         // check for index is same as factor key
+        guard let threshold_key = self.tkey else {
+            throw "Invalid tkey"
+        }
+        
+        let factor = try factorKey ?? curveSecp256k1.SecretKey().serialize()
+        
+        let selectedTag = try TssModule.get_tss_tag(threshold_key: threshold_key)
+        let (tssIndex, _ ) = try await TssModule.get_tss_share(threshold_key: threshold_key, tss_tag: selectedTag, factorKey: factor)
         // create new factor if different index
-        // copy if same index
+        if ( tssIndex == tssShareIndex.toString()) {
+            try await self.copyFactor(newFactorKey: factor, tssShareIndex: tssShareIndex)
+        } else {
+            // copy if same index
+            try await self.addNewFactor(newFactorKey: factor, tssShareIndex: tssShareIndex)
+        }
+        
+        // backup metadata share using factorKey
+        let shareIndex = try self.getDeviceMetadataShareIndex()
+        try TssModule.backup_share_with_factor_key(threshold_key: threshold_key, shareIndex: shareIndex, factorKey: factor)
+        
+        // update description
+        let description = createCoreKitFactorDescription(module: FactorDescriptionTypeModule.HashedShare, tssIndex: tssShareIndex.toInt32())
+        let jsonStr = try factorDescriptionToJsonStr(dataObj: description)
+        let factorPub = try curveSecp256k1.SecretKey(hex: factor).toPublic().serialize(compressed: true)
+        try await threshold_key.add_share_description(key: factorPub, description: jsonStr )
     }
     
     public func deleteFactor ( deleteFactorPub: String, deleteFactorKey: String? = nil) async throws {
@@ -125,15 +154,20 @@ extension MpcSigningKit {
         let selectedTag = try TssModule.get_tss_tag(threshold_key: threshold_key)
         
         
+        try await TssModule.delete_factor_pub(threshold_key: threshold_key, tss_tag: selectedTag, factor_key: factorKey, auth_signatures: sigs, delete_factor_pub: deleteFactorPub, nodeDetails: nodeDetails!, torusUtils: torusUtils)
+        
         // delete backup metadata share with factorkey
         if let deleteFactorKey = deleteFactorKey {
+            let factorkey = try curveSecp256k1.SecretKey(hex: deleteFactorKey)
+            if try factorkey.toPublic().serialize(compressed: true) != curveSecp256k1.PublicKey(hex: deleteFactorPub).serialize(compressed: true) {
+                // unmatch public key
+                throw "unmatch factorPub and factor key"
+            }
             // set metadata to Not Found
         }
-        
-        try await TssModule.delete_factor_pub(threshold_key: threshold_key, tss_tag: selectedTag, factor_key: factorKey, auth_signatures: sigs, delete_factor_pub: deleteFactorPub, nodeDetails: nodeDetails!, torusUtils: torusUtils)
     }
     
-    private func copyFactor ( newFactorKey: String, tssShareIndex: Int32 ) async throws {
+    private func copyFactor ( newFactorKey: String, tssShareIndex: TssShareType ) async throws {
         guard let threshold_key = self.tkey, let factorKey = self.factorKey else {
             throw "Invalid tkey"
         }
@@ -146,10 +180,10 @@ extension MpcSigningKit {
         let shareIndex = try self.getDeviceMetadataShareIndex()
         try TssModule.backup_share_with_factor_key(threshold_key: threshold_key, shareIndex: shareIndex, factorKey: newFactorKey)
         
-        try await TssModule.copy_factor_pub(threshold_key: threshold_key, tss_tag: selectedTag, factorKey: factorKey, newFactorPub: newFactorPub, tss_index: tssShareIndex)
+        try await TssModule.copy_factor_pub(threshold_key: threshold_key, tss_tag: selectedTag, factorKey: factorKey, newFactorPub: newFactorPub, tss_index: tssShareIndex.toInt32())
     }
     
-    private func addNewFactor ( newFactorKey: String, tssShareIndex: Int32 ) async throws {
+    private func addNewFactor ( newFactorKey: String, tssShareIndex: TssShareType ) async throws {
         guard let threshold_key = self.tkey, let factorKey = self.factorKey, let sigs = self.authSigs else {
             throw "Invalid tkey"
         }
@@ -162,7 +196,7 @@ extension MpcSigningKit {
         let shareIndex = try self.getDeviceMetadataShareIndex()
         try TssModule.backup_share_with_factor_key(threshold_key: threshold_key, shareIndex: shareIndex, factorKey: newFactorKey)
         
-        try await TssModule.add_factor_pub(threshold_key: threshold_key, tss_tag: selectedTag, factor_key: factorKey, auth_signatures: sigs, new_factor_pub: newFactorPub, new_tss_index: tssShareIndex, nodeDetails: nodeDetails!, torusUtils: torusUtils)
+        try await TssModule.add_factor_pub(threshold_key: threshold_key, tss_tag: selectedTag, factor_key: factorKey, auth_signatures: sigs, new_factor_pub: newFactorPub, new_tss_index: tssShareIndex.toInt32(), nodeDetails: nodeDetails!, torusUtils: torusUtils)
     }
     
     private func bootstrapTssClient (selected_tag: String ) async throws -> (TSSClient, [String: String]) {

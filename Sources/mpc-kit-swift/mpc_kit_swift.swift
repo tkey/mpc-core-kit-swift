@@ -17,37 +17,32 @@ import CommonSources
 import curveSecp256k1
 
 public struct MpcSigningKit  {
-
+    
+    internal var selectedTag: String?;
+    internal var factorKey: String?;
+    
+    internal var oauthKey: String?;
+    internal var network: TorusNetwork;
+    internal var option: CoreKitOptions;
+    internal var state : CoreKitState;
+    
+    public var metadataHostUrl : String;
+    
     public var tkey : ThresholdKey?;
     
-    public var selectedTag: String?;
     public var tssEndpoints: [String]?;
     public var authSigs: [String]?;
     public var verifier: String?;
     public var verifierId: String?;
-    internal var factorKey: String?;
-//    public var tssNonce: Int32;
-    
-    public var nodeIndexes: [Int]?;
-    
-    public var publicKey: String?;
     
     public var torusUtils: TorusUtils;
+    public var nodeIndexes: [Int]?;
     public var nodeDetails : AllNodeDetailsModel? ;
     
     public var nodeDetailsManager : NodeDetailManager;
     
     public var sigs: [String]?;
     
-    private var oauthKey: String?;
-    
-    private var network: TorusNetwork;
-    
-    private var option: CoreKitOptions;
-    
-    internal var state : CoreKitState;
-    
-    private var metadataHostUrl : String;
     
     // init
     public init( web3AuthClientId : String , web3AuthNetwork: TorusNetwork ) {
@@ -64,17 +59,7 @@ public struct MpcSigningKit  {
         
         // will be overwrritten
         self.metadataHostUrl = "https://metadata.tor.us"
-        
-        
     }
-    
-//    private mutating func updateState( partialState :    ) {
-//        self.state = {
-//            self.state...,
-//            partialState,
-//        }
-//    }
-    
     
     public func getDeviceMetadataShareIndex() throws -> String {
         guard let shareIndex = self.state.deviceMetadataShareIndex else {
@@ -84,13 +69,6 @@ public struct MpcSigningKit  {
     }
     
     public mutating func login (loginProvider: LoginProviders, verifier: String ) async throws -> KeyDetails {
-//        let sub = SubVerifierDetails( loginType: .web,
-//                                      loginProvider: .google,
-//                                      clientId: self.option.Web3AuthClientId,
-//                                      verifier: verifier,
-//                                      redirectURL: "tdsdk://tdsdk/oauthCallback",
-//                                      browserRedirectURL: "https://scripts.toruswallet.io/redirect.html"
-//                                     )
         let sub = SubVerifierDetails( loginType: .web,
                                       loginProvider: loginProvider,
                                       clientId: self.option.Web3AuthClientId,
@@ -183,16 +161,6 @@ public struct MpcSigningKit  {
 
         let key_details = try await thresholdKey.initialize(never_initialize_new_key: false, include_local_metadata_transitions: false)
 
-//        print(key_details.total_shares)
-//        print(key_details.required_shares)
-//        print(key_details.pub_key)
-//        let totalShares = Int(key_details.total_shares)
-//        let threshold = Int(key_details.threshold)
-//        let tkeyInitalized = true
-        
-        // public key of the metadatakey
-//        let metadataPublicKey = try key_details.pub_key.getPublicKey(format: .EllipticCompress)
-        
         self.tkey = thresholdKey
         
         if key_details.required_shares > 0 {
@@ -200,9 +168,9 @@ public struct MpcSigningKit  {
         } else {
             try await self.newUser()
         }
+        
         // to modify to corekit details
         return try thresholdKey.get_key_details()
-        
     }
     
     private mutating func existingUser() async throws {
@@ -217,7 +185,7 @@ public struct MpcSigningKit  {
             // input hash factor
             do {
                 try await self.inputFactor(factorKey: factorKey)
-                let _ = try await self.tkey?.reconstruct()
+                let _ = try await threshold_key.reconstruct()
             } catch {
                 // unable to recover via hashFactor
             }
@@ -228,6 +196,9 @@ public struct MpcSigningKit  {
         guard let tkey = self.tkey else {
             throw "Invalid tkey"
         }
+        guard let nodeDetails = self.nodeDetails else {
+            throw "absent nodeDetails"
+        }
         
         let _ = try await tkey.reconstruct()
 
@@ -236,6 +207,7 @@ public struct MpcSigningKit  {
         let factorKey :  String
         if ( self.option.disableHashFactor == false ) {
             factorKey = self.getHashKey()
+            
         } else  {
             // random generate
             factorKey  = try curveSecp256k1.SecretKey().serialize()
@@ -248,36 +220,48 @@ public struct MpcSigningKit  {
         let tssIndex = Int32(2)
         
         let defaultTag = "default"
-        try await TssModule.create_tagged_tss_share(threshold_key: tkey, tss_tag: defaultTag, deviceTssShare: nil, factorPub: factorPub, deviceTssIndex: tssIndex, nodeDetails: self.nodeDetails!, torusUtils: self.torusUtils)
+        try await TssModule.create_tagged_tss_share(threshold_key: tkey, tss_tag: defaultTag, deviceTssShare: nil, factorPub: factorPub, deviceTssIndex: tssIndex, nodeDetails: nodeDetails, torusUtils: self.torusUtils)
 
+        // backup metadata share using factorKey
         // finding device share index
         var shareIndexes = try tkey.get_shares_indexes()
         shareIndexes.removeAll(where: {$0 == "1"})
 
-        // backup metadata share using factorKey
         try TssModule.backup_share_with_factor_key(threshold_key: tkey, shareIndex: shareIndexes[0], factorKey: factorKey)
         
-        let description = [
-            "module": "Device Factor key",
-            "tssTag": defaultTag,
-            "tssShareIndex": tssIndex,
-            "dateAdded": Date().timeIntervalSince1970
-        ] as [String: Codable]
-        
-        
-        let jsonStr = try factorDescription(dataObj: description)
-
+        let description = createCoreKitFactorDescription(module: FactorDescriptionTypeModule.HashedShare, tssIndex: tssIndex)
+        let jsonStr = try factorDescriptionToJsonStr(dataObj: description)
         try await tkey.add_share_description(key: factorPub, description: jsonStr )
 
         self.factorKey = factorKey;
+    }
+
+    public mutating func inputFactor (factorKey: String) async throws {
+        guard let threshold_key = self.tkey else {
+            throw "Invalid tkey"
+        }
+        // input factor
+        try await threshold_key.input_factor_key(factorKey: factorKey)
         
-        let selectedTag = try TssModule.get_tss_tag(threshold_key: tkey)
-       
-        self.publicKey = try await TssModule.get_tss_pub_key(threshold_key: tkey, tss_tag: selectedTag)
+        // try using better methods ?
+        self.state.deviceMetadataShareIndex = try await  TssModule.find_device_share_index(threshold_key: threshold_key, factor_key: factorKey)
+        // setup tkey ( assuming only 2 factor is required)
+        let _ = try await threshold_key.reconstruct()
         
+        let selectedTag = try TssModule.get_tss_tag(threshold_key: threshold_key)
+        let _ = try await TssModule.get_tss_share(threshold_key: threshold_key, tss_tag: selectedTag, factorKey: factorKey)
+        self.factorKey = factorKey
     }
     
     
+    public func publicKey() async throws -> String {
+        guard let threshold_key = self.tkey else {
+            throw "Invalid tkey"
+        }
+        let selectedTag = try TssModule.get_tss_tag(threshold_key: threshold_key)
+       
+        return try await TssModule.get_tss_pub_key(threshold_key: threshold_key, tss_tag: selectedTag)
+    }
     
     // To remove reset account function
     public func resetAccount () async throws {
@@ -301,22 +285,6 @@ public struct MpcSigningKit  {
         return Data(hex: self.oauthKey! + self.option.Web3AuthClientId ).sha512().hexString
     }
     
-    public mutating func inputFactor (factorKey: String) async throws {
-        guard let threshold_key = self.tkey else {
-            throw "Invalid tkey"
-        }
-        // input factor
-        
-        try await threshold_key.input_factor_key(factorKey: factorKey)
-        let pk = try SecretKey(hex: factorKey)
-        
-        // try using better methods ?
-        self.state.deviceMetadataShareIndex = try await  TssModule.find_device_share_index(threshold_key: threshold_key, factor_key: factorKey)
-//        let deviceFactorPub = try pk.toPublic().serialize(compressed: true)
-        // setup tkey ( assuming only 2 factor is required)
-        let _ = try await threshold_key.reconstruct()
-        self.factorKey = factorKey
-    }
     
 // retrieve from keychain
 //        guard let factorPub = UserDefaults.standard.string(forKey: metadataPublicKey ) else {

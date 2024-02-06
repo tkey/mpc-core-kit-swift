@@ -17,7 +17,18 @@ func convertPublicKeyFormat ( publicKey: String, outFormat: PublicKeyEncoding ) 
     return result
 }
 
-func factorDescription ( dataObj: [String: Codable]  ) throws -> String {
+
+public func createCoreKitFactorDescription ( module: FactorDescriptionTypeModule, tssIndex: Int32, additional : [String:Codable] = [:] ) -> [String: Codable] {
+    var description = additional
+    
+    description["module"] = module.toString()
+    description["tssShareIndex"] = String(tssIndex)
+    description["dateAdded"] = Date().timeIntervalSince1970
+    
+    return description
+}
+
+func factorDescriptionToJsonStr ( dataObj: [String: Codable]  ) throws -> String {
     let json = try JSONSerialization.data(withJSONObject: dataObj)
     guard let jsonStr = String(data: json, encoding: .utf8) else {
         throw "Invalid data structure"

@@ -21,6 +21,7 @@ public struct CoreKitState {
     public var deviceMetadataShareIndex: String?
 }
 
+
 public struct IdTokenLoginParams {
   /**
    * Name of the verifier created on Web3Auth Dashboard. In case of Aggregate Verifier, the name of the top level aggregate verifier.
@@ -57,3 +58,48 @@ public struct IdTokenLoginParams {
    */
 //  public var importTssKey?: String
 }
+
+public enum FactorDescriptionTypeModule {
+    case HashedShare
+    case SecurityQuestions
+    case DeviceShare
+    case SeedPhrase
+    case PasswordShare
+    case SocialShare
+    case Other 
+  
+    public func toString () -> String {
+        switch self {
+            
+        case .HashedShare: return "hashedShare"
+        case .SecurityQuestions: return "tssSecurityQuestions"
+        case .DeviceShare: return "deviceShare"
+        case .SeedPhrase: return "seedPhrase"
+        case .PasswordShare: return "passwordShare"
+        case .SocialShare: return "socialShare"
+        case .Other: return "Other"
+        }
+    }
+}
+
+public enum TssShareType {
+    case DEVICE
+    case RECOVERY
+    
+    public func toInt32 () -> Int32 {
+        switch self {
+            
+        case .DEVICE: return 2
+        case .RECOVERY: return 3
+        }
+    }
+    public func toString () -> String {
+        switch self {
+            
+        case .DEVICE: return "2"
+        case .RECOVERY: return "3"
+        }
+    }
+}
+
+
