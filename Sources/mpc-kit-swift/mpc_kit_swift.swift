@@ -233,7 +233,7 @@ public struct MpcSigningKit  {
         try TssModule.backup_share_with_factor_key(threshold_key: tkey, shareIndex: shareIndexes[0], factorKey: factorKey)
         
         // record share description
-        let description = createCoreKitFactorDescription(module: FactorDescriptionTypeModule.HashedShare, tssIndex: tssIndex)
+        let description = createCoreKitFactorDescription(module: descriptionTypeModule, tssIndex: tssIndex)
         let jsonStr = try factorDescriptionToJsonStr(dataObj: description)
         try await tkey.add_share_description(key: factorPub, description: jsonStr )
 
