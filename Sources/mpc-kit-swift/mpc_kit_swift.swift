@@ -180,7 +180,7 @@ public struct MpcSigningKit  {
         
         // try check for hash factor
         if ( self.option.disableHashFactor == false) {
-            let factorKey = self.getHashKey()
+            let factorKey = try self.getHashKey()
 
             // input hash factor
             do {
@@ -207,7 +207,7 @@ public struct MpcSigningKit  {
         let factorKey :  String
         let descriptionTypeModule : FactorDescriptionTypeModule
         if ( self.option.disableHashFactor == false ) {
-            factorKey = self.getHashKey()
+            factorKey = try self.getHashKey()
             descriptionTypeModule = FactorDescriptionTypeModule.HashedShare
             
         } else  {
@@ -285,8 +285,21 @@ public struct MpcSigningKit  {
 //        resetAppState() // Allow reinitialize
     }
 
-    private func getHashKey () -> String {
-        return Data(hex: self.oauthKey! + self.option.Web3AuthClientId ).sha512().hexString
+    private func getHashKey () throws -> String {
+//        export const getHashedPrivateKey = (postboxKey: string, clientId: string): BN => {
+//          const uid = `${postboxKey}_${clientId}`;
+//          let hashUid = keccak256(Buffer.from(uid, "utf8"));
+//          hashUid = hashUid.replace("0x", "");
+//          return new BN(hashUid, "hex");
+//        };
+        guard let oauthKey = self.oauthKey else {
+            throw "invalid oauth key"
+        }
+        guard let uid = "\(oauthKey)_\(self.option.Web3AuthClientId)".data(using: .utf8)?.sha256() else {
+            throw "invalid string in getHashKey"
+        }
+        
+        return try curveSecp256k1.SecretKey(hex: uid.hexString).serialize()
     }
     
     
