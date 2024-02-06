@@ -141,7 +141,7 @@ extension MpcSigningKit {
         try TssModule.backup_share_with_factor_key(threshold_key: threshold_key, shareIndex: shareIndex, factorKey: factor)
         
         // update description
-        let description = createCoreKitFactorDescription(module: FactorDescriptionTypeModule.HashedShare, tssIndex: tssShareIndex.toInt32())
+        let description = createCoreKitFactorDescription(module: FactorDescriptionTypeModule.HashedShare, tssIndex: tssShareIndex)
         let jsonStr = try factorDescriptionToJsonStr(dataObj: description)
         let factorPub = try curveSecp256k1.SecretKey(hex: factor).toPublic().serialize(compressed: true)
         try await threshold_key.add_share_description(key: factorPub, description: jsonStr )
