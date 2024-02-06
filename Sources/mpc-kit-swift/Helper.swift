@@ -18,11 +18,11 @@ func convertPublicKeyFormat ( publicKey: String, outFormat: PublicKeyEncoding ) 
 }
 
 
-public func createCoreKitFactorDescription ( module: FactorDescriptionTypeModule, tssIndex: Int32, additional : [String:Codable] = [:] ) -> [String: Codable] {
+public func createCoreKitFactorDescription ( module: FactorDescriptionTypeModule, tssIndex: TssShareType, additional : [String:Codable] = [:] ) -> [String: Codable] {
     var description = additional
     
     description["module"] = module.toString()
-    description["tssShareIndex"] = String(tssIndex)
+    description["tssShareIndex"] = tssIndex.toString()
     description["dateAdded"] = Date().timeIntervalSince1970
     
     return description

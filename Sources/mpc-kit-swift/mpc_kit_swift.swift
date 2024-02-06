@@ -46,7 +46,7 @@ public struct MpcSigningKit  {
     
     // init
     public init( web3AuthClientId : String , web3AuthNetwork: TorusNetwork ) {
-        self.option = .init(disableHashFactor: true , Web3AuthClientId: web3AuthClientId, network: web3AuthNetwork)
+        self.option = .init(disableHashFactor: false , Web3AuthClientId: web3AuthClientId, network: web3AuthNetwork)
         self.state = CoreKitState.init()
         
         self.network = web3AuthNetwork
@@ -205,22 +205,25 @@ public struct MpcSigningKit  {
         // TSS Module Initialize - create default tag
         // generate factor key or use oauthkey hash as factor
         let factorKey :  String
+        let descriptionTypeModule : FactorDescriptionTypeModule
         if ( self.option.disableHashFactor == false ) {
             factorKey = self.getHashKey()
+            descriptionTypeModule = FactorDescriptionTypeModule.HashedShare
             
         } else  {
             // random generate
             factorKey  = try curveSecp256k1.SecretKey().serialize()
+            descriptionTypeModule = FactorDescriptionTypeModule.DeviceShare
         }
         
         // derive factor pub
         let factorPub = try curveSecp256k1.SecretKey(hex: factorKey).toPublic().serialize(compressed: false)
 
         // use input to create tag tss share
-        let tssIndex = Int32(2)
+        let tssIndex = TssShareType.DEVICE
         
         let defaultTag = "default"
-        try await TssModule.create_tagged_tss_share(threshold_key: tkey, tss_tag: defaultTag, deviceTssShare: nil, factorPub: factorPub, deviceTssIndex: tssIndex, nodeDetails: nodeDetails, torusUtils: self.torusUtils)
+        try await TssModule.create_tagged_tss_share(threshold_key: tkey, tss_tag: defaultTag, deviceTssShare: nil, factorPub: factorPub, deviceTssIndex: tssIndex.toInt32(), nodeDetails: nodeDetails, torusUtils: self.torusUtils)
 
         // backup metadata share using factorKey
         // finding device share index
@@ -229,6 +232,7 @@ public struct MpcSigningKit  {
 
         try TssModule.backup_share_with_factor_key(threshold_key: tkey, shareIndex: shareIndexes[0], factorKey: factorKey)
         
+        // record share description
         let description = createCoreKitFactorDescription(module: FactorDescriptionTypeModule.HashedShare, tssIndex: tssIndex)
         let jsonStr = try factorDescriptionToJsonStr(dataObj: description)
         try await tkey.add_share_description(key: factorPub, description: jsonStr )
