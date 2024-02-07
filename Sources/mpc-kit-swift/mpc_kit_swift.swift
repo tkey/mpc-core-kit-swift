@@ -299,6 +299,8 @@ public struct MpcSigningKit  {
             throw "invalid string in getHashKey"
         }
         
+        print(uid)
+        print(uid.hexString)
         let key = try curveSecp256k1.SecretKey(hex: uid.hexString).serialize()
         print(key)
         return key
