@@ -26,7 +26,7 @@ public struct MpcSigningKit  {
     internal var option: CoreKitOptions;
     internal var state : CoreKitState;
     
-    public var metadataHostUrl : String;
+    public var metadataHostUrl : String?;
     
     public var tkey : ThresholdKey?;
     
@@ -58,7 +58,7 @@ public struct MpcSigningKit  {
         self.nodeDetailsManager = NodeDetailManager(network: self.network)
         
         // will be overwrritten
-        self.metadataHostUrl = "https://metadata.tor.us"
+//        self.metadataHostUrl = ""
     }
     
     public func getDeviceMetadataShareIndex() throws -> String {
@@ -121,8 +121,12 @@ public struct MpcSigningKit  {
             throw "invalid metadata endpoint"
         }
         
+        
         let metadataEndpoint = "https://" + metadatahost + "/metadata"
 
+        
+        self.metadataHostUrl = metadataEndpoint
+        
         self.nodeDetails = nodeDetails
         
         self.tssEndpoints = nodeDetails.torusNodeTSSEndpoints
@@ -272,15 +276,31 @@ public struct MpcSigningKit  {
         guard let postboxkey = self.oauthKey else {
             throw "Not yet login via oauth"
         }
-        let temp_storage_layer = try StorageLayer(enable_logging: true, host_url: self.metadataHostUrl, server_time_offset: 2)
-        let temp_service_provider = try ServiceProvider(enable_logging: true, postbox_key: postboxkey)
-        let temp_threshold_key = try ThresholdKey(
-            storage_layer: temp_storage_layer,
-            service_provider: temp_service_provider,
-            enable_logging: true,
-            manual_sync: false)
-
-        try await temp_threshold_key.storage_layer_set_metadata(private_key: postboxkey, json: "{ \"message\": \"KEY_NOT_FOUND\" }")
+        
+//        let fnd = self.nodeDetailsManager
+//        let nodeDetails = try await fnd.getNodeDetails(verifier: "test", verifierID: "test")
+//        
+//        guard let host = nodeDetails.getTorusNodeEndpoints().first else {
+//            throw "Invalid node"
+//        }
+//        guard let metadatahost = URL( string: host)?.host else {
+//            throw "invalid metadata endpoint"
+//        }
+//        
+//        
+//        let metadataEndpoint = "https://" + metadatahost + "/metadata"
+//        
+//        let temp_storage_layer = try StorageLayer(enable_logging: true, host_url: metadataEndpoint, server_time_offset: 2)
+//        let temp_service_provider = try ServiceProvider(enable_logging: true, postbox_key: postboxkey)
+//        let temp_threshold_key = try ThresholdKey(
+//            storage_layer: temp_storage_layer,
+//            service_provider: temp_service_provider,
+//            enable_logging: true,
+//            manual_sync: false)
+//
+//        try await temp_threshold_key.storage_layer_set_metadata(private_key: postboxkey, json: "{ \"message\": \"KEY_NOT_FOUND\" }")
+        
+        try await self.tkey?.storage_layer_set_metadata(private_key: postboxkey, json: "{ \"message\": \"KEY_NOT_FOUND\" }")
 
 //        resetAppState() // Allow reinitialize
     }
@@ -298,7 +318,8 @@ public struct MpcSigningKit  {
         guard let uid = "\(oauthKey)_\(self.option.Web3AuthClientId)".data(using: .utf8)?.sha256() else {
             throw "invalid string in getHashKey"
         }
-        
+
+
         print(uid)
         print(uid.hexString)
         let key = try curveSecp256k1.SecretKey(hex: uid.hexString).serialize()
