@@ -286,12 +286,12 @@ public struct MpcSigningKit  {
     }
 
     private func getHashKey () throws -> String {
-//        export const getHashedPrivateKey = (postboxKey: string, clientId: string): BN => {
-//          const uid = `${postboxKey}_${clientId}`;
-//          let hashUid = keccak256(Buffer.from(uid, "utf8"));
-//          hashUid = hashUid.replace("0x", "");
-//          return new BN(hashUid, "hex");
-//        };
+        //        export const getHashedPrivateKey = (postboxKey: string, clientId: string): BN => {
+        //          const uid = `${postboxKey}_${clientId}`;
+        //          let hashUid = keccak256(Buffer.from(uid, "utf8"));
+        //          hashUid = hashUid.replace("0x", "");
+        //          return new BN(hashUid, "hex");
+        //        };
         guard let oauthKey = self.oauthKey else {
             throw "invalid oauth key"
         }
@@ -299,7 +299,9 @@ public struct MpcSigningKit  {
             throw "invalid string in getHashKey"
         }
         
-        return try curveSecp256k1.SecretKey(hex: uid.hexString).serialize()
+        let key = try curveSecp256k1.SecretKey(hex: uid.hexString).serialize()
+        print(key)
+        return key
     }
     
     
