@@ -16,7 +16,7 @@ import CommonSources
 
 import curveSecp256k1
 
-public struct MpcSigningKit  {
+public struct MpcCoreKit  {
     
     internal var selectedTag: String?;
     internal var factorKey: String?;
@@ -24,7 +24,8 @@ public struct MpcSigningKit  {
     internal var oauthKey: String?;
     internal var network: TorusNetwork;
     internal var option: CoreKitOptions;
-    internal var state : CoreKitState;
+    
+    internal var appState : CoreKitAppState;
     
     public var metadataHostUrl : String?;
     
@@ -43,56 +44,74 @@ public struct MpcSigningKit  {
     
     public var sigs: [String]?;
     
+    public var coreKitStorage : CoreKitStorage
+    
+    private let storeKey = "corekitStore"
+    
+    private let localAppStateKey = "localAppState"
+    
     
     // init
-    public init( web3AuthClientId : String , web3AuthNetwork: TorusNetwork ) {
+    public init( web3AuthClientId : String , web3AuthNetwork: TorusNetwork, localStorage: ILocalStorage ) {
         self.option = .init(disableHashFactor: false , Web3AuthClientId: web3AuthClientId, network: web3AuthNetwork)
-        self.state = CoreKitState.init()
+        self.appState = CoreKitAppState.init()
         
         self.network = web3AuthNetwork
         
         self.torusUtils = TorusUtils( enableOneKey: true,
                                      network: self.network )
         
-        
         self.nodeDetailsManager = NodeDetailManager(network: self.network)
         
-        // will be overwrritten
-//        self.metadataHostUrl = ""
+        self.coreKitStorage = .init(storeKey: self.storeKey, storage: localStorage)
+
+    }
+    
+//    public mutating func rehydrate() async throws {
+//        let appState : CoreKitAppState = try await self.coreKitStorage.get(key: self.localAppStateKey)
+    //        _
+//    }
+    
+    public mutating func updateAppState( state: CoreKitAppState) async throws {
+        // mutating self
+        self.appState.merge(with: state)
+        
+        let jsonState = try JSONEncoder().encode(self.appState).bytes
+        try await self.coreKitStorage.set(key: self.localAppStateKey, payload: jsonState )
+    }
+    
+    public func getCurrentFactorKey() throws -> String {
+        guard let factor = self.appState.factorKey else {
+            throw "factor key absent"
+        }
+        return factor
     }
     
     public func getDeviceMetadataShareIndex() throws -> String {
-        guard let shareIndex = self.state.deviceMetadataShareIndex else {
+        guard let shareIndex = self.appState.deviceMetadataShareIndex else {
             throw "share index not found"
         }
         return shareIndex
     }
     
-    public mutating func login (loginProvider: LoginProviders, verifier: String ) async throws -> KeyDetails {
+    public mutating func login (loginProvider: LoginProviders, verifier: String , jwtParams: [String: String] = [:] ) async throws -> KeyDetails {
+        if loginProvider == .jwt && jwtParams.isEmpty {
+            throw "jwt login should provide jwtParams"
+        }
+        
         let sub = SubVerifierDetails( loginType: .web,
                                       loginProvider: loginProvider,
                                       clientId: self.option.Web3AuthClientId,
                                       verifier: verifier,
                                       redirectURL: "tdsdk://tdsdk/oauthCallback",
-                                      browserRedirectURL: "https://scripts.toruswallet.io/redirect.html"
+                                      browserRedirectURL: "https://scripts.toruswallet.io/redirect.html",
+                                      jwtParams: jwtParams
                                      )
         let customAuth = CustomAuth( aggregateVerifierType: .singleLogin, aggregateVerifier: verifier, subVerifierDetails: [sub], network: self.network, enableOneKey: true)
         
         let userData = try await customAuth.triggerLogin()
         return try await self.login(userData: userData)
     }
-    
-//    public mutating func loginWithJwt( params: IdTokenLoginParams  ) async throws {
-//        let verifier = self.customAuth.aggregateVerifier
-//        
-//        
-//        let torusKey = try await customAuth.getTorusKey(verifier: params.verifier, verifierId: params.verifierId, idToken: params.idToken)
-//        let torusKeyData =  TorusKeyData.init(torusKey: torusKey, userInfo: [:])
-
-//        return try await self.login(userData: torusKeyData)
-//    }
-    
-    
     
     // login should return key_details
     // with factor key if new user
@@ -150,7 +169,7 @@ public struct MpcSigningKit  {
         
         self.authSigs = sigs
         
-        // create tkey
+        // initialize tkey
         let storage_layer = try StorageLayer(enable_logging: true, host_url: metadataEndpoint, server_time_offset: 2)
         
         let service_provider = try ServiceProvider(enable_logging: true, postbox_key: postboxkey, useTss: true, verifier: verifier, verifierId: verifierId, nodeDetails: nodeDetails)
@@ -173,7 +192,7 @@ public struct MpcSigningKit  {
             try await self.newUser()
         }
         
-        // to modify to corekit details
+        // to add tss pub details to corekit details
         return try thresholdKey.get_key_details()
     }
     
@@ -182,17 +201,29 @@ public struct MpcSigningKit  {
             throw "Invalid tkey"
         }
         
+        let factor: String?
         // try check for hash factor
         if ( self.option.disableHashFactor == false) {
-            let factorKey = try self.getHashKey()
+            factor = try? self.getHashKey()
 
-            // input hash factor
-            do {
-                try await self.inputFactor(factorKey: factorKey)
-                let _ = try await threshold_key.reconstruct()
-            } catch {
-                // unable to recover via hashFactor
-            }
+        } else {
+            // try check device Storage
+            factor = try? await self.getDeviceFactor()
+        }
+        
+        // factor not found, return and request factor from inputFactor function
+        guard let factor = factor else {
+            return
+        }
+        
+        // try input hash factor
+        do {
+            try await self.inputFactor(factorKey: factor)
+            let _ = try await threshold_key.reconstruct()
+            self.factorKey = factor
+        } catch {
+            // unable to recover via Factor
+            // do not throw to allow input factor
         }
     }
     
@@ -242,6 +273,19 @@ public struct MpcSigningKit  {
         try await tkey.add_share_description(key: factorPub, description: jsonStr )
 
         self.factorKey = factorKey;
+        
+        let metadataPubKey = try tkey.get_key_details().pub_key.getPublicKey(format: .EllipticCompress)
+        try await self.updateAppState(state: .init(factorKey: factorKey, metadataPubKey: metadataPubKey))
+        
+        // save as device factor if hashfactor is disable
+        if ( self.option.disableHashFactor == false ) {
+            try await self.setDeviceFactor(factorKey: factorKey)
+        }
+    }
+    
+    public mutating func logout () async throws {
+        self.appState = .init()
+        try await self.coreKitStorage.set(key: self.localAppStateKey, payload: self.appState)
     }
 
     public mutating func inputFactor (factorKey: String) async throws {
@@ -252,7 +296,9 @@ public struct MpcSigningKit  {
         try await threshold_key.input_factor_key(factorKey: factorKey)
         
         // try using better methods ?
-        self.state.deviceMetadataShareIndex = try await  TssModule.find_device_share_index(threshold_key: threshold_key, factor_key: factorKey)
+        let deviceMetadataShareIndex = try await  TssModule.find_device_share_index(threshold_key: threshold_key, factor_key: factorKey)
+        try await self.updateAppState(state: .init(deviceMetadataShareIndex: deviceMetadataShareIndex))
+        
         // setup tkey ( assuming only 2 factor is required)
         let _ = try await threshold_key.reconstruct()
         
@@ -260,7 +306,6 @@ public struct MpcSigningKit  {
         let _ = try await TssModule.get_tss_share(threshold_key: threshold_key, tss_tag: selectedTag, factorKey: factorKey)
         self.factorKey = factorKey
     }
-    
     
     public func publicKey() async throws -> String {
         guard let threshold_key = self.tkey else {
@@ -277,89 +322,30 @@ public struct MpcSigningKit  {
             throw "Not yet login via oauth"
         }
         
-//        let fnd = self.nodeDetailsManager
-//        let nodeDetails = try await fnd.getNodeDetails(verifier: "test", verifierID: "test")
-//        
-//        guard let host = nodeDetails.getTorusNodeEndpoints().first else {
-//            throw "Invalid node"
-//        }
-//        guard let metadatahost = URL( string: host)?.host else {
-//            throw "invalid metadata endpoint"
-//        }
-//        
-//        
-//        let metadataEndpoint = "https://" + metadatahost + "/metadata"
-//        
-//        let temp_storage_layer = try StorageLayer(enable_logging: true, host_url: metadataEndpoint, server_time_offset: 2)
-//        let temp_service_provider = try ServiceProvider(enable_logging: true, postbox_key: postboxkey)
-//        let temp_threshold_key = try ThresholdKey(
-//            storage_layer: temp_storage_layer,
-//            service_provider: temp_service_provider,
-//            enable_logging: true,
-//            manual_sync: false)
-//
-//        try await temp_threshold_key.storage_layer_set_metadata(private_key: postboxkey, json: "{ \"message\": \"KEY_NOT_FOUND\" }")
+        guard let threshold_key = self.tkey else {
+            throw "invalid Tkey"
+        }
         
-        try await self.tkey?.storage_layer_set_metadata(private_key: postboxkey, json: "{ \"message\": \"KEY_NOT_FOUND\" }")
+        guard let _ = self.metadataHostUrl else {
+            throw "invalid metadata url"
+        }
+        
+        try await threshold_key.storage_layer_set_metadata(private_key: postboxkey, json: "{ \"message\": \"KEY_NOT_FOUND\" }")
 
-//        resetAppState() // Allow reinitialize
+        // reset appState
+        try await self.resetDeviceFactorStore()
+        try await self.coreKitStorage.set(key: self.localAppStateKey, payload: [:])
+//        try await self.coreKitStorage.set(key: self.localAppStateKey, payload: [:])
     }
 
     private func getHashKey () throws -> String {
-        //        export const getHashedPrivateKey = (postboxKey: string, clientId: string): BN => {
-        //          const uid = `${postboxKey}_${clientId}`;
-        //          let hashUid = keccak256(Buffer.from(uid, "utf8"));
-        //          hashUid = hashUid.replace("0x", "");
-        //          return new BN(hashUid, "hex");
-        //        };
         guard let oauthKey = self.oauthKey else {
             throw "invalid oauth key"
         }
         guard let uid = "\(oauthKey)_\(self.option.Web3AuthClientId)".data(using: .utf8)?.sha256() else {
             throw "invalid string in getHashKey"
         }
-
-
-        print(uid)
-        print(uid.hexString)
         let key = try curveSecp256k1.SecretKey(hex: uid.hexString).serialize()
-        print(key)
         return key
     }
-    
-    
-// retrieve from keychain
-//        guard let factorPub = UserDefaults.standard.string(forKey: metadataPublicKey ) else {
-//             alertContent = "Failed to find device share."
-//             showAlert = true
-//             showSpinner = SpinnerLocation.nowhere
-//             showRecovery = true
-//             return
-//         }
-
-        
-//            deviceFactorPub = factorPub
-//            let factorKey = try KeychainInterface.fetch(key: factorPub)
-//            try await threshold_key.input_factor_key(factorKey: factorKey)
-//            let pk = PrivateKey(hex: factorKey)
-//            deviceFactorPub = try pk.toPublic()
-    
-    
-    
-// Save to keychain
-    
-    // point metadata pubkey to factorPub
-//    UserDefaults.standard.set(factorPub, forKey: metadataPublicKey)
-
-    // can be moved
-    // save factor key in keychain using factorPub ( this factor key should be saved in any where that is accessable by the device)
-//    guard let _ = try? KeychainInterface.save(item: factorKey.hex, key: factorPub) else {
-//        throw "Failed to save factor key"
-//    }
-    
-    
-//    let defaultTssShareDescription = try thresholdKey.get_share_descriptions()
-//    metadataDescription = "\(defaultTssShareDescription)"
 }
-
-

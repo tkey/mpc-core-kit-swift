@@ -21,7 +21,7 @@
     {
       "identity" : "cryptoswift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/krzyzanowskim/CryptoSwift",
+      "location" : "https://github.com/krzyzanowskim/CryptoSwift.git",
       "state" : {
         "revision" : "7892a123f7e8d0fe62f9f03728b17bbd4f94df5c",
         "version" : "1.8.1"
@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/torusresearch/customauth-swift-sdk",
       "state" : {
-        "revision" : "57bd8dad1ab4b6c320945fdd84d09ea0f6f81486",
-        "version" : "7.0.0"
+        "branch" : "feat/updateTorusUtils",
+        "revision" : "2e52eafeed8eaf4fc51e13a2d4ce32affe6590bc"
       }
     },
     {
@@ -86,8 +86,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tkey/tkey-mpc-swift",
       "state" : {
-        "branch" : "fix_naming",
-        "revision" : "d34409ad309dbd2507e16bd90b592840870f0477"
+        "branch" : "2.0.0",
+        "revision" : "a744a7619f2cec4891517932eee1b44836791f45"
       }
     },
     {
@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/torusresearch/torus-utils-swift",
       "state" : {
-        "branch" : "extension",
-        "revision" : "15991ab3b818f0cf3dea9e8c18da1016ae7bdc7d"
+        "revision" : "76c9b17b461152e98216dddbbf320071011cf1cb",
+        "version" : "7.0.0"
       }
     },
     {

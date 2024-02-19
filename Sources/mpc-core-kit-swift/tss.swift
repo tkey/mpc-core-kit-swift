@@ -13,7 +13,7 @@ import tkey_mpc_swift
 import curveSecp256k1
 import BigInt
 
-extension MpcSigningKit {
+extension MpcCoreKit {
     
     public func getTssPubKey () async throws -> Data {
         guard let threshold_key = self.tkey else {
@@ -118,7 +118,7 @@ extension MpcSigningKit {
     /// shareDescription?: FactorKeyTypeShareDescription;
     ///  * Additional metadata information you want to be stored alongside this factor for easy identification.
     /// additionalMetadata?: Record<string, string>;
-    public func createFactor( tssShareIndex: TssShareType, factorKey: String?, factorDescription: FactorDescriptionTypeModule, additionalMetadata: [String: Codable] = [:]) async throws {
+    public func createFactor( tssShareIndex: TssShareType, factorKey: String?, factorDescription: FactorDescriptionTypeModule, additionalMetadata: [String: Codable] = [:]) async throws -> String {
         // check for index is same as factor key
         guard let threshold_key = self.tkey else {
             throw "Invalid tkey"
@@ -145,6 +145,8 @@ extension MpcSigningKit {
         let jsonStr = try factorDescriptionToJsonStr(dataObj: description)
         let factorPub = try curveSecp256k1.SecretKey(hex: factor).toPublic().serialize(compressed: true)
         try await threshold_key.add_share_description(key: factorPub, description: jsonStr )
+        
+        return factor
     }
     
     public func deleteFactor ( deleteFactorPub: String, deleteFactorKey: String? = nil) async throws {
@@ -164,6 +166,7 @@ extension MpcSigningKit {
                 throw "unmatch factorPub and factor key"
             }
             // set metadata to Not Found
+            try await self.tkey?.storage_layer_set_metadata(private_key: deleteFactorKey, json: "{ \"message\": \"KEY_NOT_FOUND\" }")
         }
     }
     
@@ -198,6 +201,82 @@ extension MpcSigningKit {
         
         try await TssModule.add_factor_pub(threshold_key: threshold_key, tss_tag: selectedTag, factor_key: factorKey, auth_signatures: sigs, new_factor_pub: newFactorPub, new_tss_index: tssShareIndex.toInt32(), nodeDetails: nodeDetails!, torusUtils: torusUtils)
     }
+    
+    public mutating func enableMFA ( enableMFA : enableMFARecoveryFactor = .init(), recoveryFactor : Bool = true ) async throws -> String? {
+//        self.checkHashFactor()
+        let hashFactorKey = ""
+        let additionalDeviceMetadata = [
+            "deviceName" : "model"
+        ]
+        let deviceFactor = try await self.createFactor(tssShareIndex: .DEVICE, factorKey: nil, factorDescription: .DeviceShare, additionalMetadata: additionalDeviceMetadata)
+        
+        // store to device
+        try await self.coreKitStorage.set(key: "", payload: deviceFactor)
+        
+        
+        try await self.inputFactor(factorKey: deviceFactor)
+        
+        // delete hash factor key
+        let hashFactorPub = try curveSecp256k1.SecretKey(hex: hashFactorKey).toPublic().serialize(compressed: true)
+        
+        if recoveryFactor {
+            let recovery = try await self.createFactor(tssShareIndex: .RECOVERY, factorKey: enableMFA.factorKey, factorDescription: enableMFA.factorTypeDescription, additionalMetadata: enableMFA.additionalMetadata)
+        }
+        return nil
+    }
+    
+//    public async enableMFA(enableMFAParams: EnableMFAParams, recoveryFactor = true): Promise<string> {
+//      this.checkReady();
+//
+//      const hashedFactorKey = getHashedPrivateKey(this.state.oAuthKey, this.options.hashedFactorNonce);
+//      if (!(await this.checkIfFactorKeyValid(hashedFactorKey))) {
+//        if (this.tKey._localMetadataTransitions[0].length) throw new Error("CommitChanges are required before enabling MFA");
+//        throw new Error("MFA already enabled");
+//      }
+//
+//      try {
+//        let browserData;
+//
+//        if (this.isNodejsOrRN(this.options.uxMode)) {
+//          browserData = {
+//            browserName: "Node Env",
+//            browserVersion: "",
+//            deviceName: "nodejs",
+//          };
+//        } else {
+//          // try {
+//          const browserInfo = bowser.parse(navigator.userAgent);
+//          const browserName = `${browserInfo.browser.name}`;
+//          browserData = {
+//            browserName,
+//            browserVersion: browserInfo.browser.version,
+//            deviceName: browserInfo.os.name,
+//          };
+//        }
+//        const deviceFactorKey = new BN(await this.createFactor({ shareType: TssShareType.DEVICE, additionalMetadata: browserData }), "hex");
+//        if (this.currentStorage instanceof AsyncStorage) {
+//          asyncStoreFactor(deviceFactorKey, this, this.options.asyncStorageKey);
+//        } else {
+//          storeWebBrowserFactor(deviceFactorKey, this, this.options.storageKey);
+//        }
+//        await this.inputFactorKey(new BN(deviceFactorKey, "hex"));
+//
+//        const hashedFactorPub = getPubKeyPoint(hashedFactorKey);
+//        await this.deleteFactor(hashedFactorPub, hashedFactorKey);
+//        await this.deleteMetadataShareBackup(hashedFactorKey);
+//
+//        // only recovery factor = true
+//        if (recoveryFactor) {
+//          const backupFactorKey = await this.createFactor({ shareType: TssShareType.RECOVERY, ...enableMFAParams });
+//          return backupFactorKey;
+//        }
+//        // update to undefined for next major release
+//        return "";
+//      } catch (err: unknown) {
+//        log.error("error enabling MFA", err);
+//        throw new Error((err as Error).message);
+//      }
+//    }
     
     private func bootstrapTssClient (selected_tag: String ) async throws -> (TSSClient, [String: String]) {
         

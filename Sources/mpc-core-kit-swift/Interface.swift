@@ -9,18 +9,65 @@ import Foundation
 import CommonSources
 import tkey_mpc_swift
 
+public protocol ILocalStorage {
+    func set(key:String, payload: Data ) async throws -> Void
+    func get(key:String) async throws -> Data
+}
+
+
+public protocol IFactorStorage {
+    func setFactor(metadataPubKey:String, factorKey: String ) async throws -> Void
+    func getFactor(metadataPubKey:String) async throws -> String
+}
+
 public struct CoreKitOptions {
     public var disableHashFactor : Bool
     public var Web3AuthClientId : String
     public var network : TorusNetwork
 }
 
-
-public struct CoreKitState {
+public struct CoreKitAppState :Codable, Equatable {
+    public var factorKey: String? = nil
+    public var metadataPubKey: String? = nil
+    
     // share index used for backup share recovery
-    public var deviceMetadataShareIndex: String?
+    public var deviceMetadataShareIndex: String? = nil
+    
+    public var loginTime : Date? = nil
+    
+    init(factorKey: String? = nil, metadataPubKey: String? = nil, deviceMetadataShareIndex: String? = nil, loginTime: Date? = nil) {
+        self.factorKey = factorKey
+        self.metadataPubKey = metadataPubKey
+        self.deviceMetadataShareIndex = deviceMetadataShareIndex
+        self.loginTime = loginTime
+    }
+    
+    // Method to merge data from another instance of MyStruct
+    mutating func merge(with other: CoreKitAppState) {
+        // Update properties based on merging logic
+        if (other.factorKey != nil) {
+            self.factorKey = other.factorKey
+        }
+        if (other.metadataPubKey != nil) {
+            self.metadataPubKey = other.metadataPubKey
+        }
+        if (other.deviceMetadataShareIndex != nil) {
+            self.deviceMetadataShareIndex = other.deviceMetadataShareIndex
+        }
+        if (other.loginTime != nil) {
+            self.loginTime = other.loginTime
+        }
+    }
 }
 
+public struct MpcKeyDetails {
+    public let tssPubKey : String
+    public let metadataPubKey: String
+    public let requiredFactors: Int32
+    public let threshold: UInt32
+//    public let total_shares: UInt32
+//    public let requiredFactors: String
+}
 
 public struct IdTokenLoginParams {
   /**
@@ -102,4 +149,14 @@ public enum TssShareType {
     }
 }
 
-
+public struct enableMFARecoveryFactor {
+    public var factorKey: String?
+    public var factorTypeDescription: FactorDescriptionTypeModule
+    public var additionalMetadata: [String:Codable]
+    
+    public init(factorKey: String? = nil, factorTypeDescription: FactorDescriptionTypeModule = .Other, additionalMetadata: [String : Codable] = [:]) {
+        self.factorKey = factorKey
+        self.factorTypeDescription = factorTypeDescription
+        self.additionalMetadata = additionalMetadata
+    }
+}
