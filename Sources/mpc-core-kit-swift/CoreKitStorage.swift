@@ -92,15 +92,18 @@ class DeviceFactorStorage : IFactorStorage {
     }
     
     public func setFactor(metadataPubKey: String, factorKey: String) async throws {
-        var localMetadata : [String: Codable]  = try await self.storage.get(key: metadataPubKey)
+        var localMetadata : [String: Codable] = [:]
+        let result : [String: Codable]?  = try? await self.storage.get(key: metadataPubKey)
+        if let result = result {
+            localMetadata = result
+        }
         localMetadata["factorKey"] = factorKey
-        
         try await self.storage.set(key: metadataPubKey, payload: localMetadata)
     }
     
     public func getFactor(metadataPubKey: String) async throws -> String {
-        let localMetadata : [String: Codable]  = try await self.storage.get(key: metadataPubKey)
-        guard let deviceFactor = localMetadata["factorKey"] as? String else {
+        let localMetadata : [String: Codable]?  = try? await self.storage.get(key: metadataPubKey)
+        guard let localMetadata = localMetadata, let deviceFactor = localMetadata["factorKey"] as? String else {
             throw "device factor not found"
         }
         return deviceFactor

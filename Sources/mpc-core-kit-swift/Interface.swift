@@ -95,15 +95,29 @@ public struct IdTokenLoginParams {
    */
 //  public var extraVerifierParams?: WebAuthnExtraParams;
 
-  /**
-   * Any additional parameter (key value pair) you'd like to pass to the login function.
-   */
-    public var additionalParams: [String: Any]?
+//  /**
+//   * Any additional parameter (key value pair) you'd like to pass to the login function.
+//   */
+//  public var additionalParams: [String: Any]?
 
   /**
    * Key to import key into Tss during first time login.
    */
 //  public var importTssKey?: String
+    
+    public var domain: String?
+    
+    public func toDictionary () throws -> [String:String]{
+        var dict : [String: String] = [:]
+        // Using Mirror to loop through struct members
+        let mirror = Mirror(reflecting: self)
+        for case let (label?, value) in mirror.children {
+            if let value = value as? String {
+                dict[label] = value
+            }
+        }
+        return dict
+    }
 }
 
 public enum FactorDescriptionTypeModule {

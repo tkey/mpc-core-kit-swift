@@ -12,6 +12,8 @@ import CustomAuth
 import TorusUtils
 import FetchNodeDetails
 import CommonSources
+import SingleFactorAuth
+
 
 
 import curveSecp256k1
@@ -52,8 +54,8 @@ public struct MpcCoreKit  {
     
     
     // init
-    public init( web3AuthClientId : String , web3AuthNetwork: TorusNetwork, localStorage: ILocalStorage ) {
-        self.option = .init(disableHashFactor: false , Web3AuthClientId: web3AuthClientId, network: web3AuthNetwork)
+    public init( web3AuthClientId : String , web3AuthNetwork: TorusNetwork, disableHashFactor : Bool = false, localStorage: ILocalStorage ) {
+        self.option = .init(disableHashFactor: disableHashFactor , Web3AuthClientId: web3AuthClientId, network: web3AuthNetwork)
         self.appState = CoreKitAppState.init()
         
         self.network = web3AuthNetwork
@@ -111,6 +113,17 @@ public struct MpcCoreKit  {
         
         let userData = try await customAuth.triggerLogin()
         return try await self.login(userData: userData)
+    }
+    
+    public mutating func loginWithJwt(verifier: String, verifierId: String, idToken: String , userInfo : [String:Any] = [:] ) async throws -> KeyDetails {
+        let singleFactor = SingleFactorAuth(singleFactorAuthArgs: .init(network: self.network))
+        
+        let torusKey = try await singleFactor.getTorusKey(loginParams: .init(verifier: verifier, verifierId: verifierId, idToken: idToken))
+        print(torusKey)
+        var modUserInfo = userInfo
+        modUserInfo.updateValue(verifier, forKey: "verifier")
+        modUserInfo.updateValue(verifierId, forKey: "verifierId")
+        return try await self.login(userData: TorusKeyData(torusKey: torusKey, userInfo: modUserInfo))
     }
     
     // login should return key_details
@@ -213,6 +226,7 @@ public struct MpcCoreKit  {
         
         // factor not found, return and request factor from inputFactor function
         guard let factor = factor else {
+            print("device Factor not found")
             return
         }
         
@@ -278,7 +292,7 @@ public struct MpcCoreKit  {
         try await self.updateAppState(state: .init(factorKey: factorKey, metadataPubKey: metadataPubKey))
         
         // save as device factor if hashfactor is disable
-        if ( self.option.disableHashFactor == false ) {
+        if ( self.option.disableHashFactor == true ) {
             try await self.setDeviceFactor(factorKey: factorKey)
         }
     }

@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "mpc-core-kit-swift",
-    platforms: [.iOS(.v13), .macOS(.v10_15)],
+    platforms: [.iOS(.v14), .macOS(.v11)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
@@ -15,7 +15,11 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/torusresearch/tss-client-swift.git", from: "2.0.0"),
         .package(url: "https://github.com/tkey/tkey-mpc-swift", branch: "2.0.0"),
-        .package(url: "https://github.com/torusresearch/customauth-swift-sdk", branch: "feat/updateTorusUtils")
+        .package(url: "https://github.com/torusresearch/customauth-swift-sdk", branch: "feat/updateTorusUtils"),
+        .package(url: "https://github.com/Web3Auth/single-factor-auth-swift", branch: "feat/update-torusUtils"),
+        
+            .package(url: "https://github.com/vapor/jwt-kit.git", from: "4.0.0")
+        
     ],
     
     targets: [
@@ -25,10 +29,13 @@ let package = Package(
             name: "mpc-core-kit-swift",
             dependencies: ["tss-client-swift",
                 .product(name: "tkey-mpc-swift", package: "tkey-mpc-swift" ),
-                .product(name: "CustomAuth", package: "customauth-swift-sdk")]
+                .product(name: "CustomAuth", package: "customauth-swift-sdk"),
+                .product(name: "SingleFactorAuth", package: "single-factor-auth-swift")
+                           
+            ]
         ),
         .testTarget(
             name: "mpc-kit-swiftTests",
-            dependencies: ["mpc-core-kit-swift"]),
+            dependencies: ["mpc-core-kit-swift", .product(name: "JWTKit", package: "jwt-kit")]),
     ]
 )

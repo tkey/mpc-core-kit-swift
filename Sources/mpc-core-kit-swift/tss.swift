@@ -109,6 +109,15 @@ extension MpcCoreKit {
         }
     }
     
+    public func getAllFactorPubs () async throws -> [String] {
+        guard let threshold_key = self.tkey else {
+            throw "tkey is not available"
+        }
+        
+        let currentTag = try TssModule.get_tss_tag(threshold_key: threshold_key)
+        return try await TssModule.get_all_factor_pub(threshold_key: threshold_key, tss_tag: currentTag)
+    }
+    
     
     /// * A BN used for encrypting your Device/ Recovery TSS Key Share. You can generate it using `generateFactorKey()` function or use an existing one.
     ///
@@ -123,30 +132,34 @@ extension MpcCoreKit {
         guard let threshold_key = self.tkey else {
             throw "Invalid tkey"
         }
+        guard let curFactorKey = self.factorKey else {
+            throw "invalid current FactorKey"
+        }
         
-        let factor = try factorKey ?? curveSecp256k1.SecretKey().serialize()
+        let newFactor = try factorKey ?? curveSecp256k1.SecretKey().serialize()
         
         let selectedTag = try TssModule.get_tss_tag(threshold_key: threshold_key)
-        let (tssIndex, _ ) = try await TssModule.get_tss_share(threshold_key: threshold_key, tss_tag: selectedTag, factorKey: factor)
+        print(selectedTag,"selected tag")
+        let (tssIndex, _ ) = try await TssModule.get_tss_share(threshold_key: threshold_key, tss_tag: selectedTag, factorKey: curFactorKey)
         // create new factor if different index
         if ( tssIndex == tssShareIndex.toString()) {
-            try await self.copyFactor(newFactorKey: factor, tssShareIndex: tssShareIndex)
+            try await self.copyFactor(newFactorKey: newFactor, tssShareIndex: tssShareIndex)
         } else {
             // copy if same index
-            try await self.addNewFactor(newFactorKey: factor, tssShareIndex: tssShareIndex)
+            try await self.addNewFactor(newFactorKey: newFactor, tssShareIndex: tssShareIndex)
         }
         
         // backup metadata share using factorKey
         let shareIndex = try self.getDeviceMetadataShareIndex()
-        try TssModule.backup_share_with_factor_key(threshold_key: threshold_key, shareIndex: shareIndex, factorKey: factor)
+        try TssModule.backup_share_with_factor_key(threshold_key: threshold_key, shareIndex: shareIndex, factorKey: newFactor)
         
         // update description
         let description = createCoreKitFactorDescription(module: FactorDescriptionTypeModule.HashedShare, tssIndex: tssShareIndex)
         let jsonStr = try factorDescriptionToJsonStr(dataObj: description)
-        let factorPub = try curveSecp256k1.SecretKey(hex: factor).toPublic().serialize(compressed: true)
+        let factorPub = try curveSecp256k1.SecretKey(hex: newFactor).toPublic().serialize(compressed: true)
         try await threshold_key.add_share_description(key: factorPub, description: jsonStr )
         
-        return factor
+        return newFactor
     }
     
     public func deleteFactor ( deleteFactorPub: String, deleteFactorKey: String? = nil) async throws {
