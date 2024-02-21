@@ -12,6 +12,7 @@ import tss_client_swift
 import tkey_mpc_swift
 import curveSecp256k1
 import BigInt
+import UIKit
 
 extension MpcCoreKit {
     
@@ -217,23 +218,32 @@ extension MpcCoreKit {
     
     public mutating func enableMFA ( enableMFA : enableMFARecoveryFactor = .init(), recoveryFactor : Bool = true ) async throws -> String? {
 //        self.checkHashFactor()
-        let hashFactorKey = ""
-        let additionalDeviceMetadata = [
-            "deviceName" : "model"
+        guard let metadataPubKey = self.appState.metadataPubKey else {
+            throw "invalid metadataPubKey"
+        }
+        let full = try curveSecp256k1.PublicKey(hex: metadataPubKey).serialize(compressed: false)
+        let xCordinate = String(full.suffix(128).prefix(64))
+        
+        let hashFactorKey = try self.getHashKey()
+        
+        let additionalDeviceMetadata = await [
+            "device" : UIDevice.current.model,
+            "name" : UIDevice.current.name
         ]
         let deviceFactor = try await self.createFactor(tssShareIndex: .DEVICE, factorKey: nil, factorDescription: .DeviceShare, additionalMetadata: additionalDeviceMetadata)
         
         // store to device
-        try await self.coreKitStorage.set(key: "", payload: deviceFactor)
-        
-        
+        try await self.coreKitStorage.set(key: xCordinate , payload: deviceFactor)
         try await self.inputFactor(factorKey: deviceFactor)
+        
         
         // delete hash factor key
         let hashFactorPub = try curveSecp256k1.SecretKey(hex: hashFactorKey).toPublic().serialize(compressed: true)
+        try await self.deleteFactor(deleteFactorPub: hashFactorPub, deleteFactorKey: hashFactorKey)
         
         if recoveryFactor {
             let recovery = try await self.createFactor(tssShareIndex: .RECOVERY, factorKey: enableMFA.factorKey, factorDescription: enableMFA.factorTypeDescription, additionalMetadata: enableMFA.additionalMetadata)
+            return recovery
         }
         return nil
     }

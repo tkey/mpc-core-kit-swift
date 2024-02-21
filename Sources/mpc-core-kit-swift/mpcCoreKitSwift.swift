@@ -352,7 +352,7 @@ public struct MpcCoreKit  {
 //        try await self.coreKitStorage.set(key: self.localAppStateKey, payload: [:])
     }
 
-    private func getHashKey () throws -> String {
+    internal func getHashKey () throws -> String {
         guard let oauthKey = self.oauthKey else {
             throw "invalid oauth key"
         }
