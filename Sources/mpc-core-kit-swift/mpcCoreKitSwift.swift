@@ -300,7 +300,7 @@ public struct MpcCoreKit  {
     public mutating func logout () async throws {
         self.appState = .init()
         let jsonState = try JSONEncoder().encode(self.appState).bytes
-        try await self.coreKitStorage.set(key: self.localAppStateKey, payload: self.appState)
+        try await self.coreKitStorage.set(key: self.localAppStateKey, payload: jsonState)
     }
 
     public mutating func inputFactor (factorKey: String) async throws {
