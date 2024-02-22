@@ -210,7 +210,8 @@ public struct MpcCoreKit  {
             rss_comm: rss_comm)
 
         let key_details = try await thresholdKey.initialize(never_initialize_new_key: false, include_local_metadata_transitions: false)
-
+        self.appState.metadataPubKey = try key_details.pub_key.getPublicKey(format: .EllipticCompress)
+        
         self.tkey = thresholdKey
         
         if key_details.required_shares > 0 {
