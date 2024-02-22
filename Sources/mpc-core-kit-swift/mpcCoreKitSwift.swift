@@ -96,17 +96,17 @@ public struct MpcCoreKit  {
         return shareIndex
     }
     
-    public mutating func login (loginProvider: LoginProviders, verifier: String , jwtParams: [String: String] = [:] ) async throws -> MpcKeyDetails {
+    public mutating func login (loginProvider: LoginProviders, clientId: String, verifier: String , jwtParams: [String: String] = [:], redirectURL: String = "tdsdk://tdsdk/oauthCallback", browserRedirectURL: String = "https://scripts.toruswallet.io/redirect.html" ) async throws -> MpcKeyDetails {
         if loginProvider == .jwt && jwtParams.isEmpty {
             throw "jwt login should provide jwtParams"
         }
         
         let sub = SubVerifierDetails( loginType: .web,
                                       loginProvider: loginProvider,
-                                      clientId: self.option.Web3AuthClientId,
+                                      clientId: clientId,
                                       verifier: verifier,
-                                      redirectURL: "tdsdk://tdsdk/oauthCallback",
-                                      browserRedirectURL: "https://scripts.toruswallet.io/redirect.html",
+                                      redirectURL: redirectURL,
+                                      browserRedirectURL: browserRedirectURL,
                                       jwtParams: jwtParams
                                      )
         let customAuth = CustomAuth( aggregateVerifierType: .singleLogin, aggregateVerifier: verifier, subVerifierDetails: [sub], network: self.network, enableOneKey: true)
