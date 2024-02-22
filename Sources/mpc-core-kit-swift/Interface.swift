@@ -65,7 +65,8 @@ public struct MpcKeyDetails {
     public let metadataPubKey: String
     public let requiredFactors: Int32
     public let threshold: UInt32
-//    public let total_shares: UInt32
+    public let shareDescriptions : String
+    public let total_shares: UInt32
 //    public let requiredFactors: String
 }
 

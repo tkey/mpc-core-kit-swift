@@ -96,7 +96,7 @@ public struct MpcCoreKit  {
         return shareIndex
     }
     
-    public mutating func login (loginProvider: LoginProviders, verifier: String , jwtParams: [String: String] = [:] ) async throws -> KeyDetails {
+    public mutating func login (loginProvider: LoginProviders, verifier: String , jwtParams: [String: String] = [:] ) async throws -> MpcKeyDetails {
         if loginProvider == .jwt && jwtParams.isEmpty {
             throw "jwt login should provide jwtParams"
         }
@@ -129,7 +129,7 @@ public struct MpcCoreKit  {
         let mnemonic = try? ShareSerializationModule.serialize_share(threshold_key: tkey!, share: factorKey, format: format)
         return mnemonic
     }
-    public mutating func loginWithJwt(verifier: String, verifierId: String, idToken: String , userInfo : [String:Any] = [:] ) async throws -> KeyDetails {
+    public mutating func loginWithJwt(verifier: String, verifierId: String, idToken: String , userInfo : [String:Any] = [:] ) async throws -> MpcKeyDetails {
         let singleFactor = SingleFactorAuth(singleFactorAuthArgs: .init(network: self.network))
         
         let torusKey = try await singleFactor.getTorusKey(loginParams: .init(verifier: verifier, verifierId: verifierId, idToken: idToken))
@@ -143,7 +143,7 @@ public struct MpcCoreKit  {
     // login should return key_details
     // with factor key if new user
     // with required factor > 0 if existing user
-    private mutating func login (userData: TorusKeyData) async throws -> KeyDetails {
+    private mutating func login (userData: TorusKeyData) async throws -> MpcKeyDetails {
         
         self.oauthKey = userData.torusKey.oAuthKeyData?.privKey
 
@@ -220,7 +220,10 @@ public struct MpcCoreKit  {
         }
         
         // to add tss pub details to corekit details
-        return try thresholdKey.get_key_details()
+        let keyDetails = try thresholdKey.get_key_details()
+        let tssTag = try TssModule.get_tss_tag(threshold_key: thresholdKey)
+        let tssPubKey = try await TssModule.get_tss_pub_key(threshold_key: thresholdKey, tss_tag: tssTag)
+        return .init(tssPubKey: tssPubKey, metadataPubKey: try keyDetails.pub_key.getPublicKey(format: .EllipticCompress), requiredFactors: key_details.required_shares, threshold: keyDetails.threshold, shareDescriptions: keyDetails.share_descriptions, total_shares: keyDetails.total_shares)
     }
     
     private mutating func existingUser() async throws {
