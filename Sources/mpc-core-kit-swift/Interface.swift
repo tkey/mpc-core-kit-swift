@@ -60,7 +60,7 @@ public struct CoreKitAppState :Codable, Equatable {
     }
 }
 
-public struct MpcKeyDetails {
+public struct MpcKeyDetails : Codable {
     public let tssPubKey : String
     public let metadataPubKey: String
     public let requiredFactors: Int32
