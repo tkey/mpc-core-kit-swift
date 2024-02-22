@@ -117,23 +117,17 @@ public struct MpcCoreKit  {
     
     
     // mneomonic to share
-    func mnemonicToKey(shareMnemonic: String) -> String {
+    public func mnemonicToKey(shareMnemonic: String, format: String) -> String? {
         // Assuming ShareSerializationModule.deserializeMnemonic returns Data
-        guard let factorKey = ShareSerializationModule.deserialize_share(threshold_key: tkey, share: shareMnemonic)(shareMnemonic) else {
-            return "" // Handle error or return appropriate value
-        }
-        
-        return factorKey
+        let factorKey = try? ShareSerializationModule.deserialize_share(threshold_key: tkey!, share: shareMnemonic, format: format);
+        return factorKey;
     }
 
     // share to mneomonic
-    func keyToMnemonic(shareMnemonic: String) -> String {
+    public func keyToMnemonic(factorKey: String, format: String) -> String? {
         // Assuming ShareSerializationModule.deserializeMnemonic returns Data
-        guard let factorKey = ShareSerializationModule.serialize_share(threshold_key: tkey, share: shareMnemonic, format: "mnemonic") else {
-            return "" // Handle error or return appropriate value
-        }
-        
-        return factorKey
+        let mnemonic = try? ShareSerializationModule.serialize_share(threshold_key: tkey!, share: factorKey, format: format)
+        return mnemonic
     }
     public mutating func loginWithJwt(verifier: String, verifierId: String, idToken: String , userInfo : [String:Any] = [:] ) async throws -> KeyDetails {
         let singleFactor = SingleFactorAuth(singleFactorAuthArgs: .init(network: self.network))
