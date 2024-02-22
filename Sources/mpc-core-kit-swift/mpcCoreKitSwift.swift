@@ -243,7 +243,8 @@ public struct MpcCoreKit  {
             
             do {
                 try await self.inputFactor(factorKey: factor)
-                let _ = try await threshold_key.reconstruct()
+                let details = try await threshold_key.reconstruct()
+                print(details)
                 self.factorKey = factor
                 return
             } catch {
