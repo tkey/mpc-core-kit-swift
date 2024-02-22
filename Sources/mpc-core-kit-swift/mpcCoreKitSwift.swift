@@ -220,10 +220,10 @@ public struct MpcCoreKit  {
         }
         
         // to add tss pub details to corekit details
-        let keyDetails = try thresholdKey.get_key_details()
+        let finalKeyDetails = try thresholdKey.get_key_details()
         let tssTag = try TssModule.get_tss_tag(threshold_key: thresholdKey)
         let tssPubKey = try await TssModule.get_tss_pub_key(threshold_key: thresholdKey, tss_tag: tssTag)
-        return .init(tssPubKey: tssPubKey, metadataPubKey: try keyDetails.pub_key.getPublicKey(format: .EllipticCompress), requiredFactors: key_details.required_shares, threshold: keyDetails.threshold, shareDescriptions: keyDetails.share_descriptions, total_shares: keyDetails.total_shares)
+        return .init(tssPubKey: tssPubKey, metadataPubKey: try finalKeyDetails.pub_key.getPublicKey(format: .EllipticCompress), requiredFactors: finalKeyDetails.required_shares, threshold: finalKeyDetails.threshold, shareDescriptions: finalKeyDetails.share_descriptions, total_shares: finalKeyDetails.total_shares)
     }
     
     private mutating func existingUser() async throws {
@@ -243,8 +243,6 @@ public struct MpcCoreKit  {
             
             do {
                 try await self.inputFactor(factorKey: factor)
-                let details = try await threshold_key.reconstruct()
-                print(details)
                 self.factorKey = factor
                 return
             } catch {
@@ -262,7 +260,6 @@ public struct MpcCoreKit  {
             }
             
             try await self.inputFactor(factorKey: factor)
-            let _ = try await threshold_key.reconstruct()
             self.factorKey = factor
         } catch {
             // swallow on invalid device factor
