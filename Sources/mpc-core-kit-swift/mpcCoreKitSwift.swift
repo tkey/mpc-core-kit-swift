@@ -231,29 +231,40 @@ public struct MpcCoreKit  {
             throw "Invalid tkey"
         }
         
-        let factor: String?
+        var factor: String?
         // try check for hash factor
         if ( self.option.disableHashFactor == false) {
             factor = try? self.getHashKey()
-
-        } else {
-            // try check device Storage
-            factor = try? await self.getDeviceFactor()
+            // factor not found, return and request factor from inputFactor function
+            guard let factor = factor else {
+                print("device Factor not found")
+                return
+            }
+            
+            do {
+                try await self.inputFactor(factorKey: factor)
+                let _ = try await threshold_key.reconstruct()
+                self.factorKey = factor
+                return
+            } catch {
+                // swallow on invalid hashFactor
+            }
         }
         
-        // factor not found, return and request factor from inputFactor function
-        guard let factor = factor else {
-            print("device Factor not found")
-            return
-        }
-        
-        // try input hash factor
+        // try check device Storage
         do {
+            factor = try? await self.getDeviceFactor()
+            // factor not found, return and request factor from inputFactor function
+            guard let factor = factor else {
+                print("device Factor not found")
+                return
+            }
+            
             try await self.inputFactor(factorKey: factor)
             let _ = try await threshold_key.reconstruct()
             self.factorKey = factor
         } catch {
-            // unable to recover via Factor
+            // swallow on invalid device factor
             // do not throw to allow input factor
         }
     }
