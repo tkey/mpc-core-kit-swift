@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tkey/curvelib.swift",
       "state" : {
-        "revision" : "508322dbd3b18a92c1e9c4eb68da6a228acb1d7d",
-        "version" : "0.1.1"
+        "revision" : "7dad3bf1793de263f83406c08c18c9316abf082f",
+        "version" : "0.1.2"
       }
     },
     {
@@ -42,7 +42,7 @@
       "location" : "https://github.com/torusresearch/customauth-swift-sdk",
       "state" : {
         "branch" : "feat/updateTorusUtils",
-        "revision" : "0c075e904ffb0d10d1eccbc20c421de909763724"
+        "revision" : "b911971e507650739c7b136f0a312aec892612d8"
       }
     },
     {
@@ -114,7 +114,7 @@
       "location" : "https://github.com/Web3Auth/single-factor-auth-swift",
       "state" : {
         "branch" : "feat/update-torusUtils",
-        "revision" : "b0088fd02e0f69347f92b49e09c0aa5a3aae7ead"
+        "revision" : "0015535ad4caeccbc8c93b630b5e482511893841"
       }
     },
     {
@@ -185,8 +185,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio.git",
       "state" : {
-        "revision" : "635b2589494c97e48c62514bc8b37ced762e0a62",
-        "version" : "2.63.0"
+        "revision" : "fc63f0cf4e55a4597407a9fc95b16a2bc44b4982",
+        "version" : "2.64.0"
       }
     },
     {
@@ -194,8 +194,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio-extras.git",
       "state" : {
-        "revision" : "363da63c1966405764f380c627409b2f9d9e710b",
-        "version" : "1.21.0"
+        "revision" : "a3b640d7dc567225db7c94386a6e71aded1bfa63",
+        "version" : "1.22.0"
       }
     },
     {
@@ -239,17 +239,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tkey/tkey-mpc-swift",
       "state" : {
-        "branch" : "2.0.0",
-        "revision" : "a744a7619f2cec4891517932eee1b44836791f45"
+        "branch" : "2.0.1",
+        "revision" : "195235357f36edec4ec87189c222e1992403ad4f"
       }
     },
     {
       "identity" : "torus-utils-swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/torusresearch/torus-utils-swift",
+      "location" : "https://github.com/torusresearch/torus-utils-swift.git",
       "state" : {
-        "revision" : "76c9b17b461152e98216dddbbf320071011cf1cb",
-        "version" : "7.0.0"
+        "revision" : "3fb829e71caa275556a067a1ffa1ca579bafbf8e",
+        "version" : "7.0.1"
       }
     },
     {
@@ -257,8 +257,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/torusresearch/tss-client-swift.git",
       "state" : {
-        "revision" : "d1a35e3849ec90a64752d9b82ec91052f861ad65",
-        "version" : "2.0.0"
+        "revision" : "9590a1d784177d4679eca62d4dbfe781e9870c40",
+        "version" : "2.0.2"
       }
     },
     {
