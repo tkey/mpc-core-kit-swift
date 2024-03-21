@@ -61,7 +61,7 @@ public struct MpcCoreKit  {
         self.network = web3AuthNetwork
         
         self.torusUtils = TorusUtils( enableOneKey: true,
-                                     network: self.network )
+                                      network: self.network, clientId: web3AuthClientId )
         
         self.nodeDetailsManager = NodeDetailManager(network: self.network)
         
