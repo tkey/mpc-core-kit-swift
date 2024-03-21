@@ -109,7 +109,7 @@ public struct MpcCoreKit  {
                                       browserRedirectURL: browserRedirectURL,
                                       jwtParams: jwtParams
                                      )
-        let customAuth = CustomAuth(web3AuthClientId: clientId, aggregateVerifierType: .singleLogin, aggregateVerifier: verifier, subVerifierDetails: [sub], network: self.network, enableOneKey: true)
+        let customAuth = CustomAuth(web3AuthClientId: option.Web3AuthClientId, aggregateVerifierType: .singleLogin, aggregateVerifier: verifier, subVerifierDetails: [sub], network: self.network, enableOneKey: true)
         
         let userData = try await customAuth.triggerLogin()
         return try await self.login(userData: userData)
