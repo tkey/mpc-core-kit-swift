@@ -130,7 +130,7 @@ public struct MpcCoreKit  {
         return mnemonic
     }
     public mutating func loginWithJwt(verifier: String, verifierId: String, idToken: String , userInfo : [String:Any] = [:] ) async throws -> MpcKeyDetails {
-        let singleFactor = SingleFactorAuth(singleFactorAuthArgs: .init(network: self.network))
+        let singleFactor = SingleFactorAuth(singleFactorAuthArgs: .init( web3AuthClientId: self.option.Web3AuthClientId ,network: self.network))
         
         let torusKey = try await singleFactor.getTorusKey(loginParams: .init(verifier: verifier, verifierId: verifierId, idToken: idToken))
         print(torusKey)
