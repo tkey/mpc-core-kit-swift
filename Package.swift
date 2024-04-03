@@ -14,11 +14,10 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/torusresearch/tss-client-swift.git", from: "2.0.1"),
-        .package(url: "https://github.com/tkey/tkey-mpc-swift", branch: "2.0.1"),
-        .package(url: "https://github.com/torusresearch/customauth-swift-sdk", branch: "feat/web3authClientId"),
+        .package(url: "https://github.com/tkey/tkey-mpc-swift", branch: "feat/update-torusUtils-8"),
+        .package(url: "https://github.com/torusresearch/customauth-swift-sdk", from: "9.0.0"),
         .package(url: "https://github.com/Web3Auth/single-factor-auth-swift", branch: "feat/update-torusUtils"),
-        
-            .package(url: "https://github.com/vapor/jwt-kit.git", from: "4.0.0")
+        .package(url: "https://github.com/vapor/jwt-kit.git", from: "4.0.0")
         
     ],
     
