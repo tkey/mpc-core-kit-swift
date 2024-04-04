@@ -86,8 +86,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Web3Auth/session-manager-swift.git",
       "state" : {
-        "revision" : "290e36cd0646f7fb3be737b65bdfc9f5428dfd5c",
-        "version" : "3.1.0"
+        "revision" : "c89d9205a1ce38cd6c6374b906a9039d9cc03f05",
+        "version" : "3.1.1"
       }
     },
     {
@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Web3Auth/single-factor-auth-swift",
       "state" : {
-        "revision" : "f2f56e8b7002a84ac4f4d2028570c51343a3e49f",
-        "version" : "4.0.0"
+        "branch" : "feat/update-torusUtils",
+        "revision" : "e7603119d0f58af7b38ec5cd29b03a945b3adc37"
       }
     },
     {

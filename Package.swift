@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "mpc-core-kit-swift",
-    platforms: [.iOS(.v14), .macOS(.v11)],
+    platforms: [.iOS(.v13), .macOS(.v11)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
@@ -16,7 +16,7 @@ let package = Package(
         .package(url: "https://github.com/torusresearch/tss-client-swift.git", from: "2.0.2"),
         .package(url: "https://github.com/tkey/tkey-mpc-swift", from: "2.1.0"),
         .package(url: "https://github.com/torusresearch/customauth-swift-sdk", from: "9.0.0"),
-        .package(url: "https://github.com/Web3Auth/single-factor-auth-swift", from: "4.0.0"),
+        .package(url: "https://github.com/Web3Auth/single-factor-auth-swift", branch: "feat/update-torusUtils"),
         .package(url: "https://github.com/vapor/jwt-kit.git", from: "4.0.0")
         
     ],
