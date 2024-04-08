@@ -11,6 +11,10 @@ import tkey_mpc_swift
 import BigInt
 import curveSecp256k1
 
+import SingleFactorAuth
+
+import CommonSources
+
 func convertPublicKeyFormat ( publicKey: String, outFormat: PublicKeyEncoding ) throws -> String {
     let point = try KeyPoint(address: publicKey)
     let result = try point.getPublicKey(format: outFormat)
@@ -58,5 +62,25 @@ public class MemoryStorage : ILocalStorage {
     
     public func set(key: String, payload: Data) async throws {
         memory.updateValue(payload, forKey: key)
+    }
+}
+
+
+func convertWeb3AuthNetworkToTorusNetWork ( network: Web3AuthNetwork ) -> TorusNetwork {
+    switch network {
+    case Web3AuthNetwork.SAPPHIRE_DEVNET : return .sapphire(.SAPPHIRE_DEVNET);
+    case Web3AuthNetwork.SAPPHIRE_MAINNET : return .sapphire(.SAPPHIRE_MAINNET);
+    case Web3AuthNetwork.MAINNET : return .legacy(.MAINNET);
+    case Web3AuthNetwork.TESTNET: return .legacy(.TESTNET);
+    case Web3AuthNetwork.CYAN: return .legacy(.CYAN);
+    case Web3AuthNetwork.AQUA: return .legacy(.AQUA);
+    case Web3AuthNetwork.CELESTE: return .legacy(.CELESTE);
+    case Web3AuthNetwork.CUSTOM(_): return .sapphire(.SAPPHIRE_MAINNET);
+    }
+}
+
+public extension Web3AuthNetwork {
+    func toTorusNetwork () -> TorusNetwork{
+        return convertWeb3AuthNetworkToTorusNetWork(network: self)
     }
 }

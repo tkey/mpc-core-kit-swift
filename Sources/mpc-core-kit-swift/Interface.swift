@@ -8,6 +8,7 @@
 import Foundation
 import CommonSources
 import tkey_mpc_swift
+import SingleFactorAuth
 
 public protocol ILocalStorage {
     func set(key:String, payload: Data ) async throws -> Void
@@ -23,7 +24,7 @@ public protocol IFactorStorage {
 public struct CoreKitOptions {
     public var disableHashFactor : Bool
     public var Web3AuthClientId : String
-    public var network : TorusNetwork
+    public var network : Web3AuthNetwork
 }
 
 public struct CoreKitAppState :Codable, Equatable {
