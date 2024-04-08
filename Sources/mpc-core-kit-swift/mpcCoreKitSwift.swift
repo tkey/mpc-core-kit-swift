@@ -24,7 +24,7 @@ public struct MpcCoreKit  {
     internal var factorKey: String?;
     
     internal var oauthKey: String?;
-    internal var network: TorusNetwork;
+    internal var network: Web3AuthNetwork;
     internal var option: CoreKitOptions;
     
     internal var appState : CoreKitAppState;
@@ -54,16 +54,16 @@ public struct MpcCoreKit  {
     
     
     // init
-    public init( web3AuthClientId : String , web3AuthNetwork: TorusNetwork, disableHashFactor : Bool = false, localStorage: ILocalStorage ) {
+    public init( web3AuthClientId : String , web3AuthNetwork: Web3AuthNetwork, disableHashFactor : Bool = false, localStorage: ILocalStorage ) {
         self.option = .init(disableHashFactor: disableHashFactor , Web3AuthClientId: web3AuthClientId, network: web3AuthNetwork)
         self.appState = CoreKitAppState.init()
         
         self.network = web3AuthNetwork
         
         self.torusUtils = TorusUtils( enableOneKey: true,
-                                      network: self.network, clientId: web3AuthClientId )
+                                      network: self.network.toTorusNetwork(), clientId: web3AuthClientId )
         
-        self.nodeDetailsManager = NodeDetailManager(network: self.network)
+        self.nodeDetailsManager = NodeDetailManager(network: self.network.toTorusNetwork())
         
         self.coreKitStorage = .init(storeKey: self.storeKey, storage: localStorage)
 
@@ -109,7 +109,7 @@ public struct MpcCoreKit  {
                                       browserRedirectURL: browserRedirectURL,
                                       jwtParams: jwtParams
                                      )
-        let customAuth = CustomAuth(web3AuthClientId: option.Web3AuthClientId, aggregateVerifierType: .singleLogin, aggregateVerifier: verifier, subVerifierDetails: [sub], network: self.network, enableOneKey: true)
+        let customAuth = CustomAuth(web3AuthClientId: option.Web3AuthClientId, aggregateVerifierType: .singleLogin, aggregateVerifier: verifier, subVerifierDetails: [sub], network: self.network.toTorusNetwork(), enableOneKey: true)
         
         let userData = try await customAuth.triggerLogin()
         return try await self.login(userData: userData)

@@ -2,6 +2,7 @@ import XCTest
 @testable import mpc_core_kit_swift
 import JWTKit
 import curveSecp256k1
+import SingleFactorAuth
 
 // JWT payload structure.
 struct TestPayload: JWTPayload, Equatable {
@@ -100,7 +101,7 @@ final class mpc_kit_swiftTests: XCTestCase {
         // https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods
         
         let memoryStorage = MemoryStorage()
-        var coreKitInstance = MpcCoreKit( web3AuthClientId: "torus-test-health", web3AuthNetwork: .sapphire(.SAPPHIRE_DEVNET), disableHashFactor: false, localStorage: memoryStorage)
+        var coreKitInstance = MpcCoreKit( web3AuthClientId: "torus-test-health", web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage)
         let email = "testiosEmail004"
         let verifier = "torus-test-health"
         let data = try  mockLogin2(email: email)
