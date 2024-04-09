@@ -239,7 +239,7 @@ public struct MpcCoreKit  {
             // if factor not found, continue forward and try to retrive device factor
             if factor != nil {
                 do {
-                    try await self.inputFactor(factorKey: factor)
+                    try await self.inputFactor(factorKey: factor!)
                     self.factorKey = factor
                     return
                 } catch {
