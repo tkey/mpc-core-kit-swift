@@ -233,7 +233,7 @@ extension MpcCoreKit {
         let deviceFactor = try await self.createFactor(tssShareIndex: .DEVICE, factorKey: nil, factorDescription: .DeviceShare, additionalMetadata: additionalDeviceMetadata)
         
         // store to device
-        try await self.coreKitStorage.set(key: xCordinate , payload: deviceFactor)
+        try await self.setDeviceFactor(factorKey: deviceFactor)
         try await self.inputFactor(factorKey: deviceFactor)
         
         
