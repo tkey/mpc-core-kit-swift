@@ -22,7 +22,7 @@ func convertPublicKeyFormat ( publicKey: String, outFormat: PublicKeyEncoding ) 
 }
 
 
-public func createCoreKitFactorDescription ( module: FactorDescriptionTypeModule, tssIndex: TssShareType, additional : [String:Codable] = [:] ) -> [String: Codable] {
+public func createCoreKitFactorDescription ( module: FactorDescriptionTypeModule, tssIndex: TssShareType, additional : [String:Any] = [:] ) -> [String: Any] {
     var description = additional
     
     description["module"] = module.toString()
@@ -32,7 +32,7 @@ public func createCoreKitFactorDescription ( module: FactorDescriptionTypeModule
     return description
 }
 
-func factorDescriptionToJsonStr ( dataObj: [String: Codable]  ) throws -> String {
+func factorDescriptionToJsonStr ( dataObj: [String: Any]  ) throws -> String {
     let json = try JSONSerialization.data(withJSONObject: dataObj)
     guard let jsonStr = String(data: json, encoding: .utf8) else {
         throw "Invalid data structure"

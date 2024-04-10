@@ -128,7 +128,7 @@ extension MpcCoreKit {
     /// shareDescription?: FactorKeyTypeShareDescription;
     ///  * Additional metadata information you want to be stored alongside this factor for easy identification.
     /// additionalMetadata?: Record<string, string>;
-    public func createFactor( tssShareIndex: TssShareType, factorKey: String?, factorDescription: FactorDescriptionTypeModule, additionalMetadata: [String: Codable] = [:]) async throws -> String {
+    public func createFactor( tssShareIndex: TssShareType, factorKey: String?, factorDescription: FactorDescriptionTypeModule, additionalMetadata: [String: Any] = [:]) async throws -> String {
         // check for index is same as factor key
         guard let threshold_key = self.tkey else {
             throw "Invalid tkey"
