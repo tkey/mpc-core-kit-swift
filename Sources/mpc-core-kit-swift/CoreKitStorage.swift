@@ -47,10 +47,10 @@ public class CoreKitStorage {
         return resultStr
     }
     
-    public func getStore() async throws -> [String: Codable] {
+    public func getStore() async throws -> [String: Any] {
         let result = try await self.storage.get(key: self.storeKey)
         if result.isEmpty { return [:] }
-        let store = try JSONSerialization.jsonObject(with: result) as? [String: Codable]
+        let store = try JSONSerialization.jsonObject(with: result) as? [String: Any]
         guard let storeUnwrapped = store else {
             return [:]
         }
