@@ -311,9 +311,10 @@ public struct MpcCoreKit  {
         try await tkey.add_share_description(key: factorPub, description: jsonStr )
 
         self.factorKey = factorKey;
+        let deviceMetadataShareIndex = try await  TssModule.find_device_share_index(threshold_key: tkey, factor_key: factorKey)
         
         let metadataPubKey = try tkey.get_key_details().pub_key.getPublicKey(format: .EllipticCompress)
-        try await self.updateAppState(state: .init(factorKey: factorKey, metadataPubKey: metadataPubKey))
+        try await self.updateAppState(state: .init(factorKey: factorKey, metadataPubKey: metadataPubKey, deviceMetadataShareIndex: deviceMetadataShareIndex))
         
         // save as device factor if hashfactor is disable
         if ( self.option.disableHashFactor == true ) {

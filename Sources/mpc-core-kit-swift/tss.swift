@@ -221,9 +221,7 @@ extension MpcCoreKit {
         guard let metadataPubKey = self.appState.metadataPubKey else {
             throw "invalid metadataPubKey"
         }
-        let full = try curveSecp256k1.PublicKey(hex: metadataPubKey).serialize(compressed: false)
-        let xCordinate = String(full.suffix(128).prefix(64))
-        
+       
         let hashFactorKey = try self.getHashKey()
         
         let additionalDeviceMetadata = await [
