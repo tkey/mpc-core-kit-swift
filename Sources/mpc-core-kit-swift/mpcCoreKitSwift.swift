@@ -96,7 +96,7 @@ public struct MpcCoreKit  {
         return shareIndex
     }
     
-    public mutating func login (loginProvider: LoginProviders, clientId: String, verifier: String , jwtParams: [String: String] = [:], redirectURL: String = "tdsdk://tdsdk/oauthCallback", browserRedirectURL: String = "https://scripts.toruswallet.io/redirect.html" ) async throws -> MpcKeyDetails {
+    public mutating func loginWithOAuth(loginProvider: LoginProviders, clientId: String, verifier: String , jwtParams: [String: String] = [:], redirectURL: String = "tdsdk://tdsdk/oauthCallback", browserRedirectURL: String = "https://scripts.toruswallet.io/redirect.html" ) async throws -> MpcKeyDetails {
         if loginProvider == .jwt && jwtParams.isEmpty {
             throw "jwt login should provide jwtParams"
         }
@@ -236,18 +236,15 @@ public struct MpcCoreKit  {
         // try check for hash factor
         if ( self.option.disableHashFactor == false) {
             factor = try? self.getHashKey()
-            // factor not found, return and request factor from inputFactor function
-            guard let factor = factor else {
-                print("device Factor not found")
-                return
-            }
-            
-            do {
-                try await self.inputFactor(factorKey: factor)
-                self.factorKey = factor
-                return
-            } catch {
-                // swallow on invalid hashFactor
+            // if factor not found, continue forward and try to retrive device factor
+            if factor != nil {
+                do {
+                    try await self.inputFactor(factorKey: factor!)
+                    self.factorKey = factor
+                    return
+                } catch {
+                    // swallow on invalid hashFactor
+                }
             }
         }
         
@@ -314,9 +311,10 @@ public struct MpcCoreKit  {
         try await tkey.add_share_description(key: factorPub, description: jsonStr )
 
         self.factorKey = factorKey;
+        let deviceMetadataShareIndex = try await  TssModule.find_device_share_index(threshold_key: tkey, factor_key: factorKey)
         
         let metadataPubKey = try tkey.get_key_details().pub_key.getPublicKey(format: .EllipticCompress)
-        try await self.updateAppState(state: .init(factorKey: factorKey, metadataPubKey: metadataPubKey))
+        try await self.updateAppState(state: .init(factorKey: factorKey, metadataPubKey: metadataPubKey, deviceMetadataShareIndex: deviceMetadataShareIndex))
         
         // save as device factor if hashfactor is disable
         if ( self.option.disableHashFactor == true ) {

@@ -168,9 +168,9 @@ public enum TssShareType {
 public struct enableMFARecoveryFactor {
     public var factorKey: String?
     public var factorTypeDescription: FactorDescriptionTypeModule
-    public var additionalMetadata: [String:Codable]
+    public var additionalMetadata: [String:Any]
     
-    public init(factorKey: String? = nil, factorTypeDescription: FactorDescriptionTypeModule = .Other, additionalMetadata: [String : Codable] = [:]) {
+    public init(factorKey: String? = nil, factorTypeDescription: FactorDescriptionTypeModule = .Other, additionalMetadata: [String : Any] = [:]) {
         self.factorKey = factorKey
         self.factorTypeDescription = factorTypeDescription
         self.additionalMetadata = additionalMetadata
