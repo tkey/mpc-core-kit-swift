@@ -23,6 +23,8 @@ public struct MpcCoreKit  {
     internal var selectedTag: String?;
     internal var factorKey: String?;
     
+    internal var userInfo: [String: Any]?;
+    
     internal var oauthKey: String?;
     internal var network: Web3AuthNetwork;
     internal var option: CoreKitOptions;
@@ -140,12 +142,43 @@ public struct MpcCoreKit  {
         return try await self.login(userData: TorusKeyData(torusKey: torusKey, userInfo: modUserInfo))
     }
     
+    public func getUserInfo() throws -> [String: Any] {
+        guard let userInfo = self.userInfo else {
+            throw ("user is not logged in.")
+        }
+        return userInfo
+    }
+    
+    public func getKeyDetails() async throws -> MpcKeyDetails {
+        guard let finalKeyDetails = try self.tkey?.get_key_details() else {
+            throw ("Key Details Not Found!")
+        }
+        if((self.tkey == nil)) {
+            throw ("Tkey is not initialized!")
+        }
+        let tssTag = try TssModule.get_tss_tag(threshold_key: self.tkey!)
+        let tssPubKey = try await TssModule.get_tss_pub_key(threshold_key: self.tkey!, tss_tag: tssTag)
+
+        let factorsCount = try await getAllFactorPubs().count
+        let keyDetails = MpcKeyDetails(
+            tssPubKey: tssPubKey,
+            metadataPubKey: try finalKeyDetails.pub_key.getPublicKey(format: PublicKeyEncoding.FullAddress),
+            requiredFactors: finalKeyDetails.required_shares,
+            threshold: finalKeyDetails.threshold,
+            shareDescriptions: finalKeyDetails.share_descriptions,
+            total_shares: finalKeyDetails.total_shares,
+            totalFactors: UInt32(factorsCount) + 1
+        )
+        return keyDetails
+    }
+    
     // login should return key_details
     // with factor key if new user
     // with required factor > 0 if existing user
     private mutating func login (userData: TorusKeyData) async throws -> MpcKeyDetails {
         
         self.oauthKey = userData.torusKey.oAuthKeyData?.privKey
+        self.userInfo = userData.userInfo;
 
         guard let verifierLocal = userData.userInfo["verifier"] as? String, let verifierIdLocal = userData.userInfo["verifierId"] as? String else {
             throw ("Error: invalid verifer, verifierId")
@@ -224,7 +257,7 @@ public struct MpcCoreKit  {
         let finalKeyDetails = try thresholdKey.get_key_details()
         let tssTag = try TssModule.get_tss_tag(threshold_key: thresholdKey)
         let tssPubKey = try await TssModule.get_tss_pub_key(threshold_key: thresholdKey, tss_tag: tssTag)
-        return .init(tssPubKey: tssPubKey, metadataPubKey: try finalKeyDetails.pub_key.getPublicKey(format: .EllipticCompress), requiredFactors: finalKeyDetails.required_shares, threshold: finalKeyDetails.threshold, shareDescriptions: finalKeyDetails.share_descriptions, total_shares: finalKeyDetails.total_shares)
+        return .init(tssPubKey: tssPubKey, metadataPubKey: try finalKeyDetails.pub_key.getPublicKey(format: .EllipticCompress), requiredFactors: finalKeyDetails.required_shares, threshold: finalKeyDetails.threshold, shareDescriptions: finalKeyDetails.share_descriptions, total_shares: finalKeyDetails.total_shares, totalFactors: 0)
     }
     
     private mutating func existingUser() async throws {
