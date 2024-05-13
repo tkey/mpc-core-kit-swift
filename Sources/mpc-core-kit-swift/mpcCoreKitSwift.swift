@@ -135,7 +135,6 @@ public struct MpcCoreKit  {
         let singleFactor = SingleFactorAuth(singleFactorAuthArgs: .init( web3AuthClientId: self.option.Web3AuthClientId ,network: self.network))
         
         let torusKey = try await singleFactor.getTorusKey(loginParams: .init(verifier: verifier, verifierId: verifierId, idToken: idToken))
-        print(torusKey)
         var modUserInfo = userInfo
         modUserInfo.updateValue(verifier, forKey: "verifier")
         modUserInfo.updateValue(verifierId, forKey: "verifierId")
@@ -150,11 +149,11 @@ public struct MpcCoreKit  {
     }
     
     public func getKeyDetails() async throws -> MpcKeyDetails {
-        guard let finalKeyDetails = try self.tkey?.get_key_details() else {
-            throw ("Key Details Not Found!")
-        }
         if((self.tkey == nil)) {
             throw ("Tkey is not initialized!")
+        }
+        guard let finalKeyDetails = try self.tkey?.get_key_details() else {
+            throw ("Key Details Not Found!")
         }
         let tssTag = try TssModule.get_tss_tag(threshold_key: self.tkey!)
         let tssPubKey = try await TssModule.get_tss_pub_key(threshold_key: self.tkey!, tss_tag: tssTag)
@@ -256,8 +255,8 @@ public struct MpcCoreKit  {
         // to add tss pub details to corekit details
         let finalKeyDetails = try thresholdKey.get_key_details()
         let tssTag = try TssModule.get_tss_tag(threshold_key: thresholdKey)
-        let tssPubKey = try await TssModule.get_tss_pub_key(threshold_key: thresholdKey, tss_tag: tssTag)
-        return .init(tssPubKey: tssPubKey, metadataPubKey: try finalKeyDetails.pub_key.getPublicKey(format: .EllipticCompress), requiredFactors: finalKeyDetails.required_shares, threshold: finalKeyDetails.threshold, shareDescriptions: finalKeyDetails.share_descriptions, total_shares: finalKeyDetails.total_shares, totalFactors: 0)
+        let tssPubKey = try? await TssModule.get_tss_pub_key(threshold_key: thresholdKey, tss_tag: tssTag)
+                return .init(tssPubKey: tssPubKey ?? "", metadataPubKey: try finalKeyDetails.pub_key.getPublicKey(format: .EllipticCompress), requiredFactors: finalKeyDetails.required_shares, threshold: finalKeyDetails.threshold, shareDescriptions: finalKeyDetails.share_descriptions, total_shares: finalKeyDetails.total_shares, totalFactors: 0)
     }
     
     private mutating func existingUser() async throws {

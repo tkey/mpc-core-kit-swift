@@ -93,6 +93,16 @@ func mockLogin2 (email:String) throws -> String {
 
 final class mpc_kit_swiftTests: XCTestCase {
     
+    func resetMPC(email: String, verifier: String, clientId: String) async throws {
+        var coreKitInstance = MpcCoreKit( web3AuthClientId: clientId, web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: MemoryStorage() )
+        let data = try  mockLogin2(email: email)
+        let token = data
+        
+        
+        let keyDetails = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
+        try await coreKitInstance.resetAccount()
+    }
+    
     func testExample() async throws {
         // XCTest Documentation
         // https://developer.apple.com/documentation/xctest
@@ -100,10 +110,14 @@ final class mpc_kit_swiftTests: XCTestCase {
         // Defining Test Cases and Test Methods
         // https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods
         
-        let memoryStorage = MemoryStorage()
-        var coreKitInstance = MpcCoreKit( web3AuthClientId: "torus-test-health", web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage)
         let email = "testiosEmail004"
         let verifier = "torus-test-health"
+        let clientId = "torus-test-health"
+        try await resetMPC(email: email, verifier: verifier, clientId: clientId)
+        
+        let memoryStorage = MemoryStorage()
+        var coreKitInstance = MpcCoreKit( web3AuthClientId: clientId, web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage)
+        
         let data = try  mockLogin2(email: email)
         let token = data
 //        let dataObj = try JSONSerialization.jsonObject(with: data) as! [String: String]
@@ -130,5 +144,47 @@ final class mpc_kit_swiftTests: XCTestCase {
         try await coreKitInstance.deleteFactor(deleteFactorPub: deleteFactorPub, deleteFactorKey: newFactor)
         print (keyDetails)
         
+    }
+    
+    func testRecoveryFactor() async throws  {
+        
+        let email = "testiosEmail11mfa"
+        let verifier = "torus-test-health"
+        let clientId = "torus-test-health"
+        try await resetMPC(email: email, verifier: verifier, clientId: clientId)
+        let memoryStorage = MemoryStorage()
+        var coreKitInstance = MpcCoreKit( web3AuthClientId: clientId, web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage)
+        let data = try  mockLogin2(email: email)
+        let token = data
+        
+        
+        let keyDetails = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
+
+        let hash = Data(hex: "010203040506").sha3(.keccak256)
+        guard let recoveryFactor = try await coreKitInstance.enableMFA() else { throw "empty factor" };
+
+        let memoryStorage2 = MemoryStorage()
+        var coreKitInstance2 = MpcCoreKit( web3AuthClientId: "torus-test-health", web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage2);
+        let data2 = try  mockLogin2(email: email)
+        let token2 = data2
+        
+        
+        let keyDetails2 = try await coreKitInstance2.loginWithJwt(verifier: verifier, verifierId: email, idToken: token2)
+        
+        try await coreKitInstance2.inputFactor(factorKey: recoveryFactor)
+        let result = try await coreKitInstance.createFactor(tssShareIndex: .DEVICE, factorKey: nil, factorDescription: .DeviceShare)
+        
+        let getKeyDetails = try await coreKitInstance2.getKeyDetails()
+        XCTAssertEqual(getKeyDetails.requiredFactors, 0);
+
+        let userInfo = try coreKitInstance2.getUserInfo();
+        if let verifierId = userInfo["verifierId"] as? String {
+            XCTAssertEqual(verifierId, email);
+        } else {
+            XCTFail("Verifier ID not matching.")
+        }
+        
+        let hash2 =  Data(hex: "010203040506").sha3(.keccak256)
+        let signatures2 = try await coreKitInstance2.tssSign(message: hash2)
     }
 }
