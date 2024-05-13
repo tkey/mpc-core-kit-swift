@@ -341,7 +341,9 @@ extension MpcCoreKit {
         let coeffs = try TSSHelpers.getServerCoefficients(participatingServerDKGIndexes: nodeInd.map({ BigInt($0) }), userTssIndex: userTssIndex)
 
         let shareUnsigned = BigUInt(tssShare, radix: 16)!
-        let share = BigInt(sign: .plus, magnitude: shareUnsigned)
+        let share = try TSSHelpers.denormalizeShare(participatingServerDKGIndexes: nodeInd.map({ BigInt($0) }), userTssIndex: userTssIndex, userTssShare:  BigInt(sign: .plus, magnitude: shareUnsigned))
+        
+        
 
         let client = try TSSClient(session: session, index: Int32(clientIndex), parties: partyIndexes.map({Int32($0)}), endpoints: urls.map({ URL(string: $0 ?? "") }), tssSocketEndpoints: socketUrls.map({ URL(string: $0 ?? "") }), share: TSSHelpers.base64Share(share: share), pubKey: try TSSHelpers.base64PublicKey(pubKey: Data(hex: publicKey)))
 
