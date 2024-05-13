@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import CommonSources
-import tkey_mpc_swift
+import tkey
+import SingleFactorAuth
 
 public protocol ILocalStorage {
     func set(key:String, payload: Data ) async throws -> Void
@@ -23,7 +23,7 @@ public protocol IFactorStorage {
 public struct CoreKitOptions {
     public var disableHashFactor : Bool
     public var Web3AuthClientId : String
-    public var network : TorusNetwork
+    public var network : Web3AuthNetwork
 }
 
 public struct CoreKitAppState :Codable, Equatable {
@@ -67,6 +67,7 @@ public struct MpcKeyDetails : Codable {
     public let threshold: UInt32
     public let shareDescriptions : String
     public let total_shares: UInt32
+    public let totalFactors: UInt32?
 //    public let requiredFactors: String
 }
 
@@ -167,9 +168,9 @@ public enum TssShareType {
 public struct enableMFARecoveryFactor {
     public var factorKey: String?
     public var factorTypeDescription: FactorDescriptionTypeModule
-    public var additionalMetadata: [String:Codable]
+    public var additionalMetadata: [String:Any]
     
-    public init(factorKey: String? = nil, factorTypeDescription: FactorDescriptionTypeModule = .Other, additionalMetadata: [String : Codable] = [:]) {
+    public init(factorKey: String? = nil, factorTypeDescription: FactorDescriptionTypeModule = .Other, additionalMetadata: [String : Any] = [:]) {
         self.factorKey = factorKey
         self.factorTypeDescription = factorTypeDescription
         self.additionalMetadata = additionalMetadata

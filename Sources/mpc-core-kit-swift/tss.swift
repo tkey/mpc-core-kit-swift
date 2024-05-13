@@ -8,8 +8,8 @@
 import Foundation
 import CustomAuth
 import TorusUtils
-import tss_client_swift
-import tkey_mpc_swift
+import tssClientSwift
+import tkey
 import curveSecp256k1
 import BigInt
 import UIKit
@@ -84,7 +84,7 @@ extension MpcCoreKit {
         return r.magnitude.serialize() + s.magnitude.serialize() + Data([v])
     }
     
-    public func tssSign (message: Data) -> Data {
+    public func tssSign (message: Data) throws -> Data {
         
         let semaphore = DispatchSemaphore(value: 0)
         var result : Data?
@@ -95,7 +95,11 @@ extension MpcCoreKit {
         let _ = semaphore.wait(timeout: .now() + 100_000_000_000)
         
         //gepoubkey
-        return result ?? Data([])
+        guard let signature = result else {
+            throw RuntimeError("Failed to sign the message")
+        }
+        
+        return signature
     }
     
     func performAsyncTssSignOperation(message:Data,  completion: @escaping (Data) -> Void) {
@@ -128,7 +132,7 @@ extension MpcCoreKit {
     /// shareDescription?: FactorKeyTypeShareDescription;
     ///  * Additional metadata information you want to be stored alongside this factor for easy identification.
     /// additionalMetadata?: Record<string, string>;
-    public func createFactor( tssShareIndex: TssShareType, factorKey: String?, factorDescription: FactorDescriptionTypeModule, additionalMetadata: [String: Codable] = [:]) async throws -> String {
+    public func createFactor( tssShareIndex: TssShareType, factorKey: String?, factorDescription: FactorDescriptionTypeModule, additionalMetadata: [String: Any] = [:]) async throws -> String {
         // check for index is same as factor key
         guard let threshold_key = self.tkey else {
             throw "Invalid tkey"
@@ -221,9 +225,7 @@ extension MpcCoreKit {
         guard let metadataPubKey = self.appState.metadataPubKey else {
             throw "invalid metadataPubKey"
         }
-        let full = try curveSecp256k1.PublicKey(hex: metadataPubKey).serialize(compressed: false)
-        let xCordinate = String(full.suffix(128).prefix(64))
-        
+       
         let hashFactorKey = try self.getHashKey()
         
         let additionalDeviceMetadata = await [
@@ -233,7 +235,7 @@ extension MpcCoreKit {
         let deviceFactor = try await self.createFactor(tssShareIndex: .DEVICE, factorKey: nil, factorDescription: .DeviceShare, additionalMetadata: additionalDeviceMetadata)
         
         // store to device
-        try await self.coreKitStorage.set(key: xCordinate , payload: deviceFactor)
+        try await self.setDeviceFactor(factorKey: deviceFactor)
         try await self.inputFactor(factorKey: deviceFactor)
         
         
@@ -326,7 +328,7 @@ extension MpcCoreKit {
         // generate a random nonce for sessionID
         let randomKey = try BigUInt(  Data(hexString:  curveSecp256k1.SecretKey().serialize() )! )
         let random = BigInt(sign: .plus, magnitude: randomKey) + BigInt(Date().timeIntervalSince1970)
-        let sessionNonce = TSSHelpers.base64ToBase64url( base64: TSSHelpers.hashMessage(message: random.serialize().toHexString()))
+        let sessionNonce = TSSHelpers.base64ToBase64url( base64: try TSSHelpers.hashMessage(message: random.magnitude.serialize().addLeading0sForLength64().toHexString()))
         
         // create the full session string
         let session = TSSHelpers.assembleFullSession(verifier: verifier, verifierId: verifierId, tssTag: selected_tag, tssNonce: String(tssNonce), sessionNonce: sessionNonce)
@@ -343,7 +345,9 @@ extension MpcCoreKit {
         let coeffs = try TSSHelpers.getServerCoefficients(participatingServerDKGIndexes: nodeInd.map({ BigInt($0) }), userTssIndex: userTssIndex)
 
         let shareUnsigned = BigUInt(tssShare, radix: 16)!
-        let share = BigInt(sign: .plus, magnitude: shareUnsigned)
+        let share = try TSSHelpers.denormalizeShare(participatingServerDKGIndexes: nodeInd.map({ BigInt($0) }), userTssIndex: userTssIndex, userTssShare:  BigInt(sign: .plus, magnitude: shareUnsigned))
+        
+        
 
         let client = try TSSClient(session: session, index: Int32(clientIndex), parties: partyIndexes.map({Int32($0)}), endpoints: urls.map({ URL(string: $0 ?? "") }), tssSocketEndpoints: socketUrls.map({ URL(string: $0 ?? "") }), share: TSSHelpers.base64Share(share: share), pubKey: try TSSHelpers.base64PublicKey(pubKey: Data(hex: publicKey)))
 

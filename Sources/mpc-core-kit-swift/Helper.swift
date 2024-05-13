@@ -6,10 +6,14 @@
 //
 
 import Foundation
-import tss_client_swift
-import tkey_mpc_swift
+import tssClientSwift
+import tkey
 import BigInt
 import curveSecp256k1
+import FetchNodeDetails
+
+import SingleFactorAuth
+
 
 func convertPublicKeyFormat ( publicKey: String, outFormat: PublicKeyEncoding ) throws -> String {
     let point = try KeyPoint(address: publicKey)
@@ -18,7 +22,7 @@ func convertPublicKeyFormat ( publicKey: String, outFormat: PublicKeyEncoding ) 
 }
 
 
-public func createCoreKitFactorDescription ( module: FactorDescriptionTypeModule, tssIndex: TssShareType, additional : [String:Codable] = [:] ) -> [String: Codable] {
+public func createCoreKitFactorDescription ( module: FactorDescriptionTypeModule, tssIndex: TssShareType, additional : [String:Any] = [:] ) -> [String: Any] {
     var description = additional
     
     description["module"] = module.toString()
@@ -28,7 +32,7 @@ public func createCoreKitFactorDescription ( module: FactorDescriptionTypeModule
     return description
 }
 
-func factorDescriptionToJsonStr ( dataObj: [String: Codable]  ) throws -> String {
+func factorDescriptionToJsonStr ( dataObj: [String: Any]  ) throws -> String {
     let json = try JSONSerialization.data(withJSONObject: dataObj)
     guard let jsonStr = String(data: json, encoding: .utf8) else {
         throw "Invalid data structure"
@@ -37,13 +41,8 @@ func factorDescriptionToJsonStr ( dataObj: [String: Codable]  ) throws -> String
 }
 
 
-public func hashMessage(message: Data) -> String {
-    let hash = message.sha3(.keccak256)
-    return hash.base64EncodedString()
-}
-
-public func hashMessage(message: String) -> String {
-    return hashMessage(message: Data(message.utf8))
+public func hashMessage(message: String) throws -> String {
+    return try TSSHelpers.hashMessage(message: message)
 }
 
 public class MemoryStorage : ILocalStorage {
@@ -58,5 +57,25 @@ public class MemoryStorage : ILocalStorage {
     
     public func set(key: String, payload: Data) async throws {
         memory.updateValue(payload, forKey: key)
+    }
+}
+
+
+func convertWeb3AuthNetworkToTorusNetWork ( network: Web3AuthNetwork ) -> TorusNetwork {
+    switch network {
+    case Web3AuthNetwork.SAPPHIRE_DEVNET : return .sapphire(.SAPPHIRE_DEVNET);
+    case Web3AuthNetwork.SAPPHIRE_MAINNET : return .sapphire(.SAPPHIRE_MAINNET);
+    case Web3AuthNetwork.MAINNET : return .legacy(.MAINNET);
+    case Web3AuthNetwork.TESTNET: return .legacy(.TESTNET);
+    case Web3AuthNetwork.CYAN: return .legacy(.CYAN);
+    case Web3AuthNetwork.AQUA: return .legacy(.AQUA);
+    case Web3AuthNetwork.CELESTE: return .legacy(.CELESTE);
+    case Web3AuthNetwork.CUSTOM(_): return .sapphire(.SAPPHIRE_MAINNET);
+    }
+}
+
+public extension Web3AuthNetwork {
+    func toTorusNetwork () -> TorusNetwork{
+        return convertWeb3AuthNetworkToTorusNetWork(network: self)
     }
 }
