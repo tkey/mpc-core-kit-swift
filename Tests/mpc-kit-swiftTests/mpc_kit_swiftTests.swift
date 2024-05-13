@@ -110,10 +110,14 @@ final class mpc_kit_swiftTests: XCTestCase {
         // Defining Test Cases and Test Methods
         // https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods
         
-        let memoryStorage = MemoryStorage()
-        var coreKitInstance = MpcCoreKit( web3AuthClientId: "torus-test-health", web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage)
         let email = "testiosEmail004"
         let verifier = "torus-test-health"
+        let clientId = "torus-test-health"
+        try await resetMPC(email: email, verifier: verifier, clientId: clientId)
+        
+        let memoryStorage = MemoryStorage()
+        var coreKitInstance = MpcCoreKit( web3AuthClientId: clientId, web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage)
+        
         let data = try  mockLogin2(email: email)
         let token = data
 //        let dataObj = try JSONSerialization.jsonObject(with: data) as! [String: String]
@@ -130,7 +134,7 @@ final class mpc_kit_swiftTests: XCTestCase {
 
         let keyDetails = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
         
-        let hash =  Data(hex: "010203040506").sha256()
+        let hash = Data(hex: "010203040506").sha256()
         let signatures = try await coreKitInstance.tssSign(message: hash)
         print(signatures)
         //
@@ -170,9 +174,17 @@ final class mpc_kit_swiftTests: XCTestCase {
         try await coreKitInstance2.inputFactor(factorKey: recoveryFactor)
         let result = try await coreKitInstance.createFactor(tssShareIndex: .DEVICE, factorKey: nil, factorDescription: .DeviceShare)
         
+        let getKeyDetails = try await coreKitInstance2.getKeyDetails()
+        XCTAssertEqual(getKeyDetails.requiredFactors, 0);
+
+        let userInfo = try coreKitInstance2.getUserInfo();
+        if let verifierId = userInfo["verifierId"] as? String {
+            XCTAssertEqual(verifierId, email);
+        } else {
+            XCTFail("Verifier ID not matching.")
+        }
         
         let hash2 =  Data(hex: "010203040506").sha3(.keccak256)
         let signatures2 = try await coreKitInstance2.tssSign(message: hash2)
-        print(signatures2)
     }
 }
