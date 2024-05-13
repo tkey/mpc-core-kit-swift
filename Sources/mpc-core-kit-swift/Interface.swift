@@ -6,8 +6,7 @@
 //
 
 import Foundation
-import CommonSources
-import tkey_mpc_swift
+import tkey
 import SingleFactorAuth
 
 public protocol ILocalStorage {

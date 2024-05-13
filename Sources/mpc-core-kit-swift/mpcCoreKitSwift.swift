@@ -6,12 +6,11 @@
 //
 
 import Foundation
-import tkey_mpc_swift
+import tkey
 
 import CustomAuth
 import TorusUtils
 import FetchNodeDetails
-import CommonSources
 import SingleFactorAuth
 
 
@@ -382,10 +381,10 @@ public struct MpcCoreKit  {
         guard let oauthKey = self.oauthKey else {
             throw "invalid oauth key"
         }
-        guard let uid = "\(oauthKey)_\(self.option.Web3AuthClientId)".data(using: .utf8)?.sha256() else {
+        guard let uid = try "\(oauthKey)_\(self.option.Web3AuthClientId)".data(using: .utf8)?.sha3(varient: Variants.KECCAK256 ) else {
             throw "invalid string in getHashKey"
         }
-        let key = try curveSecp256k1.SecretKey(hex: uid.hexString).serialize()
+        let key = try curveSecp256k1.SecretKey(hex: uid.toHexString()).serialize()
         return key
     }
 }

@@ -8,8 +8,8 @@
 import Foundation
 import CustomAuth
 import TorusUtils
-import tss_client_swift
-import tkey_mpc_swift
+import tssClientSwift
+import tkey
 import curveSecp256k1
 import BigInt
 import UIKit
@@ -324,7 +324,7 @@ extension MpcCoreKit {
         // generate a random nonce for sessionID
         let randomKey = try BigUInt(  Data(hexString:  curveSecp256k1.SecretKey().serialize() )! )
         let random = BigInt(sign: .plus, magnitude: randomKey) + BigInt(Date().timeIntervalSince1970)
-        let sessionNonce = TSSHelpers.base64ToBase64url( base64: TSSHelpers.hashMessage(message: random.serialize().toHexString()))
+        let sessionNonce = TSSHelpers.base64ToBase64url( base64: try TSSHelpers.hashMessage(message: random.serialize().toHexString()))
         
         // create the full session string
         let session = TSSHelpers.assembleFullSession(verifier: verifier, verifierId: verifierId, tssTag: selected_tag, tssNonce: String(tssNonce), sessionNonce: sessionNonce)
