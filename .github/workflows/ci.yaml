@@ -19,4 +19,4 @@ jobs:
         with:
           xcode-version: "15.2.0"
       - name: package
-        run: xcodebuild test -scheme mpc-core-kit-swift -destination "platform=iOS Simulator,OS=17.0,name=iPhone 15" COMPILER_INDEX_STORE_ENABLE=NO
+        run: xcodebuild test -scheme mpc-core-kit-swift -destination "platform=iOS Simulator,OS=16.2,name=iPhone 14" COMPILER_INDEX_STORE_ENABLE=NO
