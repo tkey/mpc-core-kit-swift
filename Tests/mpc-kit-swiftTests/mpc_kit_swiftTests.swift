@@ -160,7 +160,7 @@ final class mpc_kit_swiftTests: XCTestCase {
         
         let keyDetails = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
 
-        let hash = Data(hex: "010203040506").sha3(.keccak256)
+        let hash = try Data(hex: "010203040506").sha3(varient:Variants.KECCAK256)
         guard let recoveryFactor = try await coreKitInstance.enableMFA() else { throw "empty factor" };
 
         let memoryStorage2 = MemoryStorage()
@@ -184,7 +184,7 @@ final class mpc_kit_swiftTests: XCTestCase {
             XCTFail("Verifier ID not matching.")
         }
         
-        let hash2 =  Data(hex: "010203040506").sha3(.keccak256)
+        let hash2 =  try Data(hex: "010203040506").sha3(varient: Variants.KECCAK256)
         let signatures2 = try await coreKitInstance2.tssSign(message: hash2)
     }
 }

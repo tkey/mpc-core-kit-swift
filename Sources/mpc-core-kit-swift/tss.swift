@@ -328,7 +328,7 @@ extension MpcCoreKit {
         // generate a random nonce for sessionID
         let randomKey = try BigUInt(  Data(hexString:  curveSecp256k1.SecretKey().serialize() )! )
         let random = BigInt(sign: .plus, magnitude: randomKey) + BigInt(Date().timeIntervalSince1970)
-        let sessionNonce = TSSHelpers.base64ToBase64url( base64: try TSSHelpers.hashMessage(message: random.magnitude.serialize().addLeading0sForLength64().hexString))
+        let sessionNonce = TSSHelpers.base64ToBase64url( base64: try TSSHelpers.hashMessage(message: random.magnitude.serialize().addLeading0sForLength64().toHexString()))
         
         // create the full session string
         let session = TSSHelpers.assembleFullSession(verifier: verifier, verifierId: verifierId, tssTag: selected_tag, tssNonce: String(tssNonce), sessionNonce: sessionNonce)
