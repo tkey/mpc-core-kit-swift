@@ -84,7 +84,7 @@ extension MpcCoreKit {
         return r.magnitude.serialize() + s.magnitude.serialize() + Data([v])
     }
     
-    public func tssSign (message: Data) -> Data {
+    public func tssSign (message: Data) throws -> Data {
         
         let semaphore = DispatchSemaphore(value: 0)
         var result : Data?
@@ -95,7 +95,11 @@ extension MpcCoreKit {
         let _ = semaphore.wait(timeout: .now() + 100_000_000_000)
         
         //gepoubkey
-        return result ?? Data([])
+        guard let signature = result else {
+            throw RuntimeError("Failed to sign the message")
+        }
+        
+        return signature
     }
     
     func performAsyncTssSignOperation(message:Data,  completion: @escaping (Data) -> Void) {
