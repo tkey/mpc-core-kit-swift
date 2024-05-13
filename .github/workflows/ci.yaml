@@ -17,6 +17,6 @@ jobs:
       - name: xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "14.3.1"
+          xcode-version: latest
       - name: package
         run: xcodebuild test -scheme mpc-core-kit-swift -destination "platform=iOS Simulator,OS=16.2,name=iPhone 14" COMPILER_INDEX_STORE_ENABLE=NO
