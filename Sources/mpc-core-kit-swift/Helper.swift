@@ -6,14 +6,14 @@
 //
 
 import Foundation
-import tss_client_swift
-import tkey_mpc_swift
+import tssClientSwift
+import tkey
 import BigInt
 import curveSecp256k1
+import FetchNodeDetails
 
 import SingleFactorAuth
 
-import CommonSources
 
 func convertPublicKeyFormat ( publicKey: String, outFormat: PublicKeyEncoding ) throws -> String {
     let point = try KeyPoint(address: publicKey)
@@ -41,13 +41,8 @@ func factorDescriptionToJsonStr ( dataObj: [String: Any]  ) throws -> String {
 }
 
 
-public func hashMessage(message: Data) -> String {
-    let hash = message.sha3(.keccak256)
-    return hash.base64EncodedString()
-}
-
-public func hashMessage(message: String) -> String {
-    return hashMessage(message: Data(message.utf8))
+public func hashMessage(message: String) throws -> String {
+    return try TSSHelpers.hashMessage(message: message)
 }
 
 public class MemoryStorage : ILocalStorage {
