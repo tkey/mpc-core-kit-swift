@@ -84,7 +84,7 @@ extension MpcCoreKit {
         return r.magnitude.serialize() + s.magnitude.serialize() + Data([v])
     }
     
-    public func tssSign (message: Data) -> Data {
+    public func tssSign (message: Data) throws -> Data {
         
         let semaphore = DispatchSemaphore(value: 0)
         var result : Data?
@@ -95,7 +95,11 @@ extension MpcCoreKit {
         let _ = semaphore.wait(timeout: .now() + 100_000_000_000)
         
         //gepoubkey
-        return result ?? Data([])
+        guard let signature = result else {
+            throw RuntimeError("Failed to sign the message")
+        }
+        
+        return signature
     }
     
     func performAsyncTssSignOperation(message:Data,  completion: @escaping (Data) -> Void) {
@@ -341,7 +345,9 @@ extension MpcCoreKit {
         let coeffs = try TSSHelpers.getServerCoefficients(participatingServerDKGIndexes: nodeInd.map({ BigInt($0) }), userTssIndex: userTssIndex)
 
         let shareUnsigned = BigUInt(tssShare, radix: 16)!
-        let share = BigInt(sign: .plus, magnitude: shareUnsigned)
+        let share = try TSSHelpers.denormalizeShare(participatingServerDKGIndexes: nodeInd.map({ BigInt($0) }), userTssIndex: userTssIndex, userTssShare:  BigInt(sign: .plus, magnitude: shareUnsigned))
+        
+        
 
         let client = try TSSClient(session: session, index: Int32(clientIndex), parties: partyIndexes.map({Int32($0)}), endpoints: urls.map({ URL(string: $0 ?? "") }), tssSocketEndpoints: socketUrls.map({ URL(string: $0 ?? "") }), share: TSSHelpers.base64Share(share: share), pubKey: try TSSHelpers.base64PublicKey(pubKey: Data(hex: publicKey)))
 
