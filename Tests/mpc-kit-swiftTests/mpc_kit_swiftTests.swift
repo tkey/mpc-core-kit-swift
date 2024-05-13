@@ -120,8 +120,7 @@ final class mpc_kit_swiftTests: XCTestCase {
 
         let keyDetails = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
         
-        let hash =  try Data(hex: "010203040506").sha3(varient: Variants.KECCAK256)
-        
+        let hash = try keccak256(data: Data(hex: "010203040506"))
         let signatures = try await coreKitInstance.tssSign(message: hash)
         print(signatures)
         //
