@@ -1,0 +1,22 @@
+on:
+    push:
+      branches:
+        - main
+    pull_request:
+      types:
+        - opened
+        - reopened
+        - synchronize
+  
+jobs:
+    test:
+      runs-on: macos-latest
+      steps:
+        - name: checkout
+          uses: actions/checkout@v3
+        - name: xcode
+          uses: maxim-lobanov/setup-xcode@v1
+          with:
+            xcode-version: "15.0.1"
+        - name: package
+          run: xcodebuild test -scheme mpc-core-kit-swift -destination "platform=iOS Simulator,OS=17.2,name=iPhone 15" COMPILER_INDEX_STORE_ENABLE=NO
