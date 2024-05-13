@@ -47,10 +47,10 @@ public class CoreKitStorage {
         return resultStr
     }
     
-    public func getStore() async throws -> [String: Codable] {
+    public func getStore() async throws -> [String: Any] {
         let result = try await self.storage.get(key: self.storeKey)
         if result.isEmpty { return [:] }
-        let store = try JSONSerialization.jsonObject(with: result) as? [String: Codable]
+        let store = try JSONSerialization.jsonObject(with: result) as? [String: Any]
         guard let storeUnwrapped = store else {
             return [:]
         }
@@ -92,8 +92,8 @@ class DeviceFactorStorage : IFactorStorage {
     }
     
     public func setFactor(metadataPubKey: String, factorKey: String) async throws {
-        var localMetadata : [String: Codable] = [:]
-        let result : [String: Codable]?  = try? await self.storage.get(key: metadataPubKey)
+        var localMetadata : [String: Any] = [:]
+        let result : [String: Any]?  = try? await self.storage.get(key: metadataPubKey)
         if let result = result {
             localMetadata = result
         }
@@ -102,7 +102,7 @@ class DeviceFactorStorage : IFactorStorage {
     }
     
     public func getFactor(metadataPubKey: String) async throws -> String {
-        let localMetadata : [String: Codable]?  = try? await self.storage.get(key: metadataPubKey)
+        let localMetadata : [String: Any]?  = try? await self.storage.get(key: metadataPubKey)
         guard let localMetadata = localMetadata, let deviceFactor = localMetadata["factorKey"] as? String else {
             throw "device factor not found"
         }

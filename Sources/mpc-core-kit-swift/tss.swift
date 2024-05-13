@@ -132,7 +132,7 @@ extension MpcCoreKit {
     /// shareDescription?: FactorKeyTypeShareDescription;
     ///  * Additional metadata information you want to be stored alongside this factor for easy identification.
     /// additionalMetadata?: Record<string, string>;
-    public func createFactor( tssShareIndex: TssShareType, factorKey: String?, factorDescription: FactorDescriptionTypeModule, additionalMetadata: [String: Codable] = [:]) async throws -> String {
+    public func createFactor( tssShareIndex: TssShareType, factorKey: String?, factorDescription: FactorDescriptionTypeModule, additionalMetadata: [String: Any] = [:]) async throws -> String {
         // check for index is same as factor key
         guard let threshold_key = self.tkey else {
             throw "Invalid tkey"
@@ -225,9 +225,7 @@ extension MpcCoreKit {
         guard let metadataPubKey = self.appState.metadataPubKey else {
             throw "invalid metadataPubKey"
         }
-        let full = try curveSecp256k1.PublicKey(hex: metadataPubKey).serialize(compressed: false)
-        let xCordinate = String(full.suffix(128).prefix(64))
-        
+       
         let hashFactorKey = try self.getHashKey()
         
         let additionalDeviceMetadata = await [
@@ -237,7 +235,7 @@ extension MpcCoreKit {
         let deviceFactor = try await self.createFactor(tssShareIndex: .DEVICE, factorKey: nil, factorDescription: .DeviceShare, additionalMetadata: additionalDeviceMetadata)
         
         // store to device
-        try await self.coreKitStorage.set(key: xCordinate , payload: deviceFactor)
+        try await self.setDeviceFactor(factorKey: deviceFactor)
         try await self.inputFactor(factorKey: deviceFactor)
         
         
@@ -347,7 +345,9 @@ extension MpcCoreKit {
         let coeffs = try TSSHelpers.getServerCoefficients(participatingServerDKGIndexes: nodeInd.map({ BigInt($0) }), userTssIndex: userTssIndex)
 
         let shareUnsigned = BigUInt(tssShare, radix: 16)!
-        let share = BigInt(sign: .plus, magnitude: shareUnsigned)
+        let share = try TSSHelpers.denormalizeShare(participatingServerDKGIndexes: nodeInd.map({ BigInt($0) }), userTssIndex: userTssIndex, userTssShare:  BigInt(sign: .plus, magnitude: shareUnsigned))
+        
+        
 
         let client = try TSSClient(session: session, index: Int32(clientIndex), parties: partyIndexes.map({Int32($0)}), endpoints: urls.map({ URL(string: $0 ?? "") }), tssSocketEndpoints: socketUrls.map({ URL(string: $0 ?? "") }), share: TSSHelpers.base64Share(share: share), pubKey: try TSSHelpers.base64PublicKey(pubKey: Data(hex: publicKey)))
 
