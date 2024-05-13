@@ -41,13 +41,8 @@ func factorDescriptionToJsonStr ( dataObj: [String: Any]  ) throws -> String {
 }
 
 
-public func hashMessage(message: Data) throws -> String {
-    let hash = try message.sha3(varient: Variants.KECCAK256)
-    return hash.base64EncodedString()
-}
-
 public func hashMessage(message: String) throws -> String {
-    return try hashMessage(message: Data(message.utf8))
+    return try TSSHelpers.hashMessage(message: message)
 }
 
 public class MemoryStorage : ILocalStorage {

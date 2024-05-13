@@ -381,10 +381,10 @@ public struct MpcCoreKit  {
         guard let oauthKey = self.oauthKey else {
             throw "invalid oauth key"
         }
-        guard let uid = try "\(oauthKey)_\(self.option.Web3AuthClientId)".data(using: .utf8)?.sha3(varient: Variants.KECCAK256 ) else {
+        guard let uid = try "\(oauthKey)_\(self.option.Web3AuthClientId)".data(using: .utf8)?.sha3(varient: Variants.KECCAK256 ).toHexString() else {
             throw "invalid string in getHashKey"
         }
-        let key = try curveSecp256k1.SecretKey(hex: uid.toHexString()).serialize()
+        let key = try curveSecp256k1.SecretKey(hex: uid).serialize()
         return key
     }
 }
