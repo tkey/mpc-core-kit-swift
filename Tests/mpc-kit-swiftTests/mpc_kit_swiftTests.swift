@@ -3,6 +3,7 @@ import XCTest
 import JWTKit
 import curveSecp256k1
 import SingleFactorAuth
+import Foundation
 
 // JWT payload structure.
 struct TestPayload: JWTPayload, Equatable {
@@ -83,6 +84,13 @@ func mockLogin2 (email:String) throws -> String {
 
             let payload = TestPayload(subject: SubjectClaim(stringLiteral: subject), expiration: ExpirationClaim(value: modifiedDate), audience: "torus-key-test", isAdmin: false, emailVerified: true, issuer: "torus-key-test", iat: IssuedAtClaim(value: Date()), email: email)
             let jwt = try signers.sign(payload)
+            let parsedToken = parseToken(jwtToken: jwt);
+            if let parsedEmail = parsedToken["email"] as? String {
+                XCTAssertEqual(parsedEmail, email);
+                print(parsedEmail);
+            } else {
+                XCTFail("Verifier ID not matching.")
+            }
             return jwt
         } catch {
             throw error
