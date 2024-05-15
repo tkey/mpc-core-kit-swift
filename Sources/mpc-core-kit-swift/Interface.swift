@@ -176,3 +176,94 @@ public struct enableMFARecoveryFactor {
         self.additionalMetadata = additionalMetadata
     }
 }
+
+public enum LoginType: String, Codable {
+    case google = "google"
+    case facebook = "facebook"
+    case reddit = "reddit"
+    case discord = "discord"
+    case twitch = "twitch"
+    case apple = "apple"
+    case line = "line"
+    case github = "github"
+    case kakao = "kakao"
+    case linkedin = "linkedin"
+    case twitter = "twitter"
+    case weibo = "weibo"
+    case wechat = "wechat"
+    case farcaster = "farcaster"
+    case emailPasswordless = "email_passwordless"
+    case smsPasswordless = "sms_passwordless"
+    case webauthn = "webauthn"
+    case jwt = "jwt"
+}
+
+public struct WebAuthnExtraParams: Codable {
+    public let authenticatorAttachment: String?
+    public let attestation: String?
+    public let userVerification: String?
+}
+
+public struct TorusGenericObject: Codable {
+    public let type: String?
+    public let verifier: String?
+    public let verifierIdField: String?
+}
+
+public struct TorusVerifierResponse: Codable {
+    public let email: String
+    public let name: String
+    public let profileImage: String
+    public let aggregateVerifier: String?
+    public let verifier: String
+    public let verifierId: String
+    public let typeOfLogin: LoginType
+    public let ref: String?
+    public let registerOnly: Bool?
+    public let extraVerifierParams: WebAuthnExtraParams?
+}
+
+public struct LoginWindowResponse: Codable {
+    public let accessToken: String
+    public let idToken: String?
+    public let ref: String?
+    public let extraParams: String?
+    public let extraParamsPassed: String?
+    public let state: TorusGenericObject
+}
+
+public struct UserInfo: Codable {
+    public let email: String?
+    public let name: String?
+    public let profileImage: String?
+    public let aggregateVerifier: String?
+    public let verifier: String
+    public let verifierId: String
+    public let typeOfLogin: LoginType?
+    public let ref: String?
+    public let registerOnly: Bool?
+    public let extraVerifierParams: WebAuthnExtraParams?
+    public let accessToken: String?
+    public let idToken: String?
+    public let extraParams: String?
+    public let extraParamsPassed: String?
+    public let state: TorusGenericObject?
+}
+
+enum UserInfoConversionError: Error, LocalizedError {
+    case missingData
+    case invalidData
+    case decodingError(Error)
+    
+    var errorDescription: String? {
+        switch self {
+        case .missingData:
+            return "UserInfo dictionary is missing."
+        case .invalidData:
+            return "UserInfo dictionary is invalid."
+        case .decodingError(let error):
+            return "Error decoding UserInfo: \(error.localizedDescription)"
+        }
+    }
+}
+
