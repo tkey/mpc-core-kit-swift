@@ -80,10 +80,6 @@ public extension Web3AuthNetwork {
     }
 }
 
-public func parseToken(jwtToken jwt: String) -> [String: Any] {
-  let segments = jwt.components(separatedBy: ".")
-  return decodeJWTPart(segments[1]) ?? [:]
-}
 
 func dictionaryToJsonData(_ dictionary: [String: Any]) -> Data? {
     return try? JSONSerialization.data(withJSONObject: dictionary, options: [])
