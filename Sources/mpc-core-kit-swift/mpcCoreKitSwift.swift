@@ -140,11 +140,25 @@ public struct MpcCoreKit  {
         return try await self.login(userData: TorusKeyData(torusKey: torusKey, userInfo: modUserInfo))
     }
     
-    public func getUserInfo() throws -> [String: Any] {
-        guard let userInfo = self.userInfo else {
-            throw ("user is not logged in.")
+    public func getUserInfo() throws -> UserInfo {
+        do {
+            guard let userInfoDict = self.userInfo else {
+                throw UserInfoConversionError.missingData
+            }
+            
+            guard let userInfoStruct = try convertUserDataType(dictionary: userInfoDict) else {
+                throw UserInfoConversionError.missingData
+            }
+            return userInfoStruct
+        } catch UserInfoConversionError.missingData {
+            throw("Error: UserInfo dictionary is missing.")
+        } catch UserInfoConversionError.invalidData {
+            throw("Error: UserInfo dictionary is invalid.")
+        } catch UserInfoConversionError.decodingError(let error) {
+            throw("Error decoding UserInfo: \(error)")
+        } catch {
+            throw("An unexpected error occurred: \(error)")
         }
-        return userInfo
     }
     
     public func getKeyDetails() async throws -> MpcKeyDetails {

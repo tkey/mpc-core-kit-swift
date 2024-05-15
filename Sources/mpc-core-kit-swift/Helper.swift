@@ -79,3 +79,23 @@ public extension Web3AuthNetwork {
         return convertWeb3AuthNetworkToTorusNetWork(network: self)
     }
 }
+
+
+func dictionaryToJsonData(_ dictionary: [String: Any]) -> Data? {
+    return try? JSONSerialization.data(withJSONObject: dictionary, options: [])
+}
+
+func convertUserDataType(dictionary: [String: Any]) throws -> UserInfo? {
+    if let jsonData = dictionaryToJsonData(dictionary) {
+        do {
+            let decoder = JSONDecoder()
+            let userInfo = try decoder.decode(UserInfo.self, from: jsonData)
+            return userInfo
+        } catch {
+            print("Error decoding JSON: \(error)")
+            throw "Invalid UserInfo Data structure";
+        }
+    } else {
+        throw "Invalid UserInfo Data structure";
+    }
+}
