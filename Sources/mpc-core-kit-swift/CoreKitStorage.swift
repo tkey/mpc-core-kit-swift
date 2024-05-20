@@ -18,18 +18,6 @@ public class CoreKitStorage {
         self.storeKey = storeKey
     }
     
-//    static func getInstance( storeKey: String , storage: ILocalStorage? = nil) throws -> CoreKitStorage {
-//        guard let localInstance = self.instance else {
-//            guard let lStorage = storage else {
-//                throw "no storage provided or found"
-//            }
-//            let local = CoreKitStorage.init(storeKey: storeKey, storage: lStorage)
-//            CoreKitStorage.instance = local
-//            return local
-//        }
-//        return localInstance
-//    }
-    
     public func resetStore() async throws -> Data {
         let result = try await self.storage.get(key: self.storeKey)
         let payload = try JSONSerialization.data(withJSONObject: [:])

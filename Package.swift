@@ -11,6 +11,8 @@ let package = Package(
         .library(
             name: "mpc-core-kit-swift",
             targets: ["mpc-core-kit-swift"]),
+        .library(name: "mpcBtcSigner", targets: ["mpcBtcSigner"]),
+        .library(name: "mpcEvmSigner", targets: ["mpcEvmSigner"])
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/jwt-kit.git", from: "4.0.0"),
@@ -30,8 +32,21 @@ let package = Package(
                 .product(name: "SingleFactorAuth", package: "single-factor-auth-swift"),
                 .product(name: "tkey", package: "tkey-mpc-swift" ),
                 .product(name: "tssClientSwift", package: "tss-client-swift" ),
-            ]
+            ],
+            path: "Sources/mpc-core-kit-swift"
         ),
+        .target(
+            name: "mpcBtcSigner",
+            dependencies: ["mpc-core-kit-swift"],
+            path: "Sources/BtcSigner"
+        ),
+        .target(
+            name: "mpcEvmSigner",
+            dependencies: ["mpc-core-kit-swift"],
+            path: "Sources/EvmSigner"
+        ),
+        
+        
         .testTarget(
             name: "mpc-kit-swiftTests",
             dependencies: ["mpc-core-kit-swift", .product(name: "JWTKit", package: "jwt-kit")]),
