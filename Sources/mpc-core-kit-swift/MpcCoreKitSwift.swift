@@ -164,7 +164,7 @@ public struct MpcCoreKit  {
             requiredFactors: finalKeyDetails.required_shares,
             threshold: finalKeyDetails.threshold,
             shareDescriptions: finalKeyDetails.share_descriptions,
-            total_shares: finalKeyDetails.total_shares,
+            totalShares: finalKeyDetails.total_shares,
             totalFactors: UInt32(factorsCount) + 1
         )
         return keyDetails
@@ -255,7 +255,7 @@ public struct MpcCoreKit  {
         let finalKeyDetails = try thresholdKey.get_key_details()
         let tssTag = try TssModule.get_tss_tag(threshold_key: thresholdKey)
         let tssPubKey = try? await TssModule.get_tss_pub_key(threshold_key: thresholdKey, tss_tag: tssTag)
-                return .init(tssPubKey: tssPubKey ?? "", metadataPubKey: try finalKeyDetails.pub_key.getPublicKey(format: .EllipticCompress), requiredFactors: finalKeyDetails.required_shares, threshold: finalKeyDetails.threshold, shareDescriptions: finalKeyDetails.share_descriptions, total_shares: finalKeyDetails.total_shares, totalFactors: 0)
+        return .init(tssPubKey: tssPubKey ?? "", metadataPubKey: try finalKeyDetails.pub_key.getPublicKey(format: .EllipticCompress), requiredFactors: finalKeyDetails.required_shares, threshold: finalKeyDetails.threshold, shareDescriptions: finalKeyDetails.share_descriptions, totalShares: finalKeyDetails.total_shares, totalFactors: 0)
     }
     
     private mutating func existingUser() async throws {
