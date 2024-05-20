@@ -10,7 +10,7 @@ let package = Package(
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "mpc-core-kit-swift",
-            targets: ["mpc-core-kit-swift"])
+            targets: ["mpc-core-kit-swift"]),
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/jwt-kit.git", from: "4.0.0"),
@@ -32,8 +32,6 @@ let package = Package(
                 .product(name: "tssClientSwift", package: "tss-client-swift" ),
             ]
         ),
-        
-        
         .testTarget(
             name: "mpc-kit-swiftTests",
             dependencies: ["mpc-core-kit-swift", .product(name: "JWTKit", package: "jwt-kit")]),
