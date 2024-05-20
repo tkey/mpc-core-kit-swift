@@ -10,7 +10,10 @@ import CustomAuth
 import TorusUtils
 import tssClientSwift
 import tkey
+#if canImport(curveSecp256k1)
 import curveSecp256k1
+#endif
+
 import BigInt
 import UIKit
 

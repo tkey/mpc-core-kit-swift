@@ -13,9 +13,9 @@ import TorusUtils
 import FetchNodeDetails
 import SingleFactorAuth
 
-
-
+#if canImport(curveSecp256k1)
 import curveSecp256k1
+#endif
 
 public struct MpcCoreKit  {
     

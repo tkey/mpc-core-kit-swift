@@ -9,11 +9,13 @@ import Foundation
 import tssClientSwift
 import tkey
 import BigInt
-import curveSecp256k1
 import FetchNodeDetails
 
 import SingleFactorAuth
 
+#if canImport(curveSecp256k1)
+import curveSecp256k1
+#endif
 
 func convertPublicKeyFormat ( publicKey: String, outFormat: PublicKeyEncoding ) throws -> String {
     let point = try KeyPoint(address: publicKey)

@@ -10,9 +10,7 @@ let package = Package(
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "mpc-core-kit-swift",
-            targets: ["mpc-core-kit-swift"]),
-        .library(name: "mpcBtcSigner", targets: ["mpcBtcSigner"]),
-        .library(name: "mpcEvmSigner", targets: ["mpcEvmSigner"])
+            targets: ["mpc-core-kit-swift"])
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/jwt-kit.git", from: "4.0.0"),
@@ -32,18 +30,7 @@ let package = Package(
                 .product(name: "SingleFactorAuth", package: "single-factor-auth-swift"),
                 .product(name: "tkey", package: "tkey-mpc-swift" ),
                 .product(name: "tssClientSwift", package: "tss-client-swift" ),
-            ],
-            path: "Sources/mpc-core-kit-swift"
-        ),
-        .target(
-            name: "mpcBtcSigner",
-            dependencies: ["mpc-core-kit-swift"],
-            path: "Sources/BtcSigner"
-        ),
-        .target(
-            name: "mpcEvmSigner",
-            dependencies: ["mpc-core-kit-swift"],
-            path: "Sources/EvmSigner"
+            ]
         ),
         
         
