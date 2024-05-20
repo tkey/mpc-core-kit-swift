@@ -10,7 +10,6 @@ import mpc_core_kit_swift
 
 public protocol ISigner {
     func sign( message: Data ) -> Data
-    func schnorrSign(message: Data, publicKey: Data) -> Data
     var publicKey : Data { get }
 }
 
