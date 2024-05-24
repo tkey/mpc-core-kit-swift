@@ -176,8 +176,3 @@ public struct enableMFARecoveryFactor {
         self.additionalMetadata = additionalMetadata
     }
 }
-
-public protocol EvmSigner {
-    func sign( message: Data ) throws -> Data
-    var publicKey : Data { get }
-}

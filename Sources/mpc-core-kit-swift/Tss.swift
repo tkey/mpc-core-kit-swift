@@ -357,17 +357,3 @@ extension MpcCoreKit {
         return (client, coeffs)
      }
 }
-
-
-
-extension MpcCoreKit : EvmSigner {
-    public func sign(message: Data) throws -> Data {
-        let data =  try self.tssSign(message: message)
-        return data
-    }
-    
-    public var publicKey: Data {
-        return self.getTssPubKey().suffix(64)
-    }
-    
-}
