@@ -110,13 +110,17 @@ final class mpc_kit_swiftTests: XCTestCase {
         // Defining Test Cases and Test Methods
         // https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods
         
-        let email = "testiosEmail004"
+//        let email = "testiosEmail004"
+        let email = "testios002"
         let verifier = "torus-test-health"
         let clientId = "torus-test-health"
-        try await resetMPC(email: email, verifier: verifier, clientId: clientId)
+//        try await resetMPC(email: email, verifier: verifier, clientId: clientId)
         
         let memoryStorage = MemoryStorage()
         var coreKitInstance = MpcCoreKit( web3AuthClientId: clientId, web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage)
+        let factormetadata = try await coreKitInstance.tkey?.storage_layer_get_metadata(private_key: "a9d1bb9cdea502426ed24e8a1df8f956979942028dff957c4588aeded32daec9")
+        
+        print(factormetadata)
         
         let data = try  mockLogin2(email: email)
         let token = data
@@ -132,7 +136,13 @@ final class mpc_kit_swiftTests: XCTestCase {
 //        let keyDetails = try await coreKitInstance.login(loginProvider: .jwt, verifier: "test", jwtParams: jwtParams.toDictionary())
         
 
-        let keyDetails = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
+        let keyDetails = try? await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
+        print(keyDetails)
+        print(try coreKitInstance.getHashKey())
+//        try await coreKitInstance.inputFactor(factorKey: "2d2c2c68bd80044ef943e3d0769556da97f13594a251201a480c091651098a0e")
+        let factormetadata1 = try await coreKitInstance.tkey?.storage_layer_get_metadata(private_key: "877d46727a09fcaf90d9b269f2ade70b713da9fe7fe6d781b419b3a9dc50e247")
+        
+        print(factormetadata1)
         
         let hash = try keccak256(data: Data(hex: "010203040506"))
         let signatures = try await coreKitInstance.tssSign(message: hash)
