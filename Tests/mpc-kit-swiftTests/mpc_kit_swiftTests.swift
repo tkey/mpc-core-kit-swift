@@ -84,13 +84,7 @@ func mockLogin2 (email:String) throws -> String {
 
             let payload = TestPayload(subject: SubjectClaim(stringLiteral: subject), expiration: ExpirationClaim(value: modifiedDate), audience: "torus-key-test", isAdmin: false, emailVerified: true, issuer: "torus-key-test", iat: IssuedAtClaim(value: Date()), email: email)
             let jwt = try signers.sign(payload)
-            let parsedToken = parseToken(jwtToken: jwt);
-            if let parsedEmail = parsedToken["email"] as? String {
-                XCTAssertEqual(parsedEmail, email);
-                print(parsedEmail);
-            } else {
-                XCTFail("Verifier ID not matching.")
-            }
+            
             return jwt
         } catch {
             throw error
@@ -194,5 +188,19 @@ final class mpc_kit_swiftTests: XCTestCase {
         
         let hash2 =  try Data(hex: "010203040506").sha3(varient: Variants.KECCAK256)
         let signatures2 = try await coreKitInstance2.tssSign(message: hash2)
+    }
+
+    func testparseToken() async throws {
+       let email = "testiosEmail004"
+        let data = try  mockLogin2(email: email)
+       let token = data
+        let parsedToken = parseToken(jwtToken: token);
+        print("Parsed Token: \(parsedToken)");
+        if let parsedEmail = parsedToken["email"] as? String {
+            XCTAssertEqual(parsedEmail, email);
+            print(parsedEmail);
+        } else {
+            XCTFail("Verifier ID not matching.")
+        }
     }
 }
