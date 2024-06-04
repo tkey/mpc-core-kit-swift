@@ -50,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/jwt-kit.git",
       "state" : {
-        "revision" : "484cb741f041dae2ba756e0400fb7f79707bde44",
-        "version" : "4.0.0"
+        "revision" : "c2595b9ad7f512d7f334830b4df1fed6e917946a",
+        "version" : "4.13.4"
       }
     },
     {
@@ -113,8 +113,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "ddb07e896a2a8af79512543b1c7eb9797f8898a5",
-        "version" : "1.1.7"
+        "revision" : "bc1c29221f6dfeb0ebbfbc98eb95cd3d4967868e",
+        "version" : "3.4.0"
       }
     },
     {
@@ -122,8 +122,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tkey/tkey-mpc-swift",
       "state" : {
-        "branch" : "fix/base64",
-        "revision" : "5e5bc3ea3dc01fb8921793a0adbf43511d9eb78a"
+        "revision" : "2df2d0a6c51afc76909028eb8542fe78e565d106",
+        "version" : "3.0.1"
       }
     },
     {
@@ -140,8 +140,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/torusresearch/tss-client-swift.git",
       "state" : {
-        "revision" : "40246d5e3ff1d2c97d41846576f7a81d58858981",
-        "version" : "4.0.0"
+        "revision" : "3beedc78716d9681aaa1dbe110cdfd33090a8fff",
+        "version" : "4.0.2"
       }
     }
   ],

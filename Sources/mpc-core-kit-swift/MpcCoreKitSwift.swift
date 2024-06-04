@@ -55,8 +55,8 @@ public struct MpcCoreKit  {
     
     
     // init
-    public init( web3AuthClientId : String , web3AuthNetwork: Web3AuthNetwork, disableHashFactor : Bool = false, localStorage: ILocalStorage ) {
-        self.option = .init(disableHashFactor: disableHashFactor , Web3AuthClientId: web3AuthClientId, network: web3AuthNetwork)
+    public init( web3AuthClientId : String , web3AuthNetwork: Web3AuthNetwork, disableHashFactor : Bool = false, localStorage: ILocalStorage, manualSync: Bool = false ) {
+        self.option = .init(disableHashFactor: disableHashFactor , Web3AuthClientId: web3AuthClientId, network: web3AuthNetwork, manualSync: manualSync)
         self.appState = CoreKitAppState.init()
         
         self.network = web3AuthNetwork
@@ -237,7 +237,7 @@ public struct MpcCoreKit  {
             storage_layer: storage_layer,
             service_provider: service_provider,
             enable_logging: true,
-            manual_sync: false,
+            manual_sync: self.option.manualSync,
             rss_comm: rss_comm)
 
         let key_details = try await thresholdKey.initialize(never_initialize_new_key: false, include_local_metadata_transitions: false)
@@ -385,6 +385,11 @@ public struct MpcCoreKit  {
         let selectedTag = try TssModule.get_tss_tag(threshold_key: threshold_key)
        
         return try await TssModule.get_tss_pub_key(threshold_key: threshold_key, tss_tag: selectedTag)
+    }
+    
+    public func commitChanges() async throws {
+        // create a copy syncMetadata
+        try await self.tkey?.sync_local_metadata_transistions()
     }
     
     // To remove reset account function
