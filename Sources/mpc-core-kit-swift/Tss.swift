@@ -225,7 +225,7 @@ extension MpcCoreKit {
     
     public mutating func enableMFA ( enableMFA : enableMFARecoveryFactor = .init(), recoveryFactor : Bool = true ) async throws -> String? {
 //        self.checkHashFactor()
-        guard let metadataPubKey = self.appState.metadataPubKey else {
+        guard self.appState.metadataPubKey != nil else {
             throw "invalid metadataPubKey"
         }
        

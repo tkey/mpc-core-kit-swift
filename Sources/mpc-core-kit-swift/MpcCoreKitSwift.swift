@@ -259,7 +259,7 @@ public struct MpcCoreKit  {
     }
     
     private mutating func existingUser() async throws {
-        guard let threshold_key = self.tkey else {
+        guard self.tkey != nil else {
             throw "Invalid tkey"
         }
         
