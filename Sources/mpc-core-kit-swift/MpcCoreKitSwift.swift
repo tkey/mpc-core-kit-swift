@@ -389,7 +389,10 @@ public struct MpcCoreKit  {
     
     public func commitChanges() async throws {
         // create a copy syncMetadata
-        try await self.tkey?.sync_local_metadata_transistions()
+        guard let tkey = self.tkey else {
+            throw RuntimeError("Not yet initalize")
+        }
+        try await tkey.sync_local_metadata_transistions()
     }
     
     // To remove reset account function

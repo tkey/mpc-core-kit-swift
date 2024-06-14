@@ -113,7 +113,7 @@ final class mpc_kit_swiftTests: XCTestCase {
         
         let memoryStorage = MemoryStorage()
         var coreKitInstance = MpcCoreKit( web3AuthClientId: clientId, web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage, manualSync: true)
-        let factormetadata = try await coreKitInstance.tkey?.storage_layer_get_metadata(private_key: "a9d1bb9cdea502426ed24e8a1df8f956979942028dff957c4588aeded32daec9")
+        
                 
         let data = try  mockLogin2(email: email)
         let token = data
@@ -128,7 +128,6 @@ final class mpc_kit_swiftTests: XCTestCase {
         
         let deleteFactorPub = try curveSecp256k1.SecretKey(hex: newFactor).toPublic().serialize(compressed: true)
         try await coreKitInstance.deleteFactor(deleteFactorPub: deleteFactorPub, deleteFactorKey: newFactor)
-        print (keyDetails ?? "")
         
     }
     
@@ -147,8 +146,7 @@ final class mpc_kit_swiftTests: XCTestCase {
         
         _ = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
 
-//        let hash = try Data(hex: "010203040506").sha3(varient:Variants.KECCAK256)
-        guard let recoveryFactor = try await coreKitInstance.enableMFA() else { throw "empty factor" };
+        let recoveryFactor = try await coreKitInstance.enableMFA();
 
         let memoryStorage2 = MemoryStorage()
         var coreKitInstance2 = MpcCoreKit( web3AuthClientId: "torus-test-health", web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage2);
@@ -158,9 +156,9 @@ final class mpc_kit_swiftTests: XCTestCase {
         
         let keyDetails2 = try await coreKitInstance2.loginWithJwt(verifier: verifier, verifierId: email, idToken: token2)
         
-        XCTAssert(keyDetails2.requiredFactors == 1)
+        XCTAssertEqual(keyDetails2.requiredFactors, 1)
         
-        try await coreKitInstance2.inputFactor(factorKey: recoveryFactor)
+        try await coreKitInstance2.inputFactor(factorKey: recoveryFactor!)
         let result = try await coreKitInstance.createFactor(tssShareIndex: .DEVICE, factorKey: nil, factorDescription: .DeviceShare)
         
         let getKeyDetails = try await coreKitInstance2.getKeyDetails()
