@@ -105,7 +105,6 @@ final class mpc_kit_swiftTests: XCTestCase {
     
     func testLoginFromWebAccount() async throws {
         
-//        let email = "testiosEmail004"
         let email = "testios002"
         let verifier = "torus-test-health"
         let clientId = "torus-test-health"
@@ -118,7 +117,7 @@ final class mpc_kit_swiftTests: XCTestCase {
         let data = try  mockLogin2(email: email)
         let token = data
 
-        let keyDetails = try? await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
+        let _ = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
         
         let hash = try keccak256(data: Data(hex: "010203040506"))
         let signatures = try await coreKitInstance.tssSign(message: hash)

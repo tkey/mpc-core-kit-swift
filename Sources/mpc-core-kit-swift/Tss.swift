@@ -224,13 +224,17 @@ extension MpcCoreKit {
     }
     
     public mutating func enableMFA ( enableMFA : enableMFARecoveryFactor = .init(), recoveryFactor : Bool = true ) async throws -> String? {
-//        self.checkHashFactor()
-        guard self.appState.metadataPubKey != nil else {
+        if self.appState.metadataPubKey == nil {
             throw "invalid metadataPubKey"
         }
        
         let hashFactorKey = try self.getHashKey()
+        let currentFactor = try self.getCurrentFactorKey()
         
+        if ( currentFactor != hashFactorKey ) {
+            throw RuntimeError("Current factorKey should be HashFactor")
+        }
+            
         let additionalDeviceMetadata = await [
             "device" : UIDevice.current.model,
             "name" : UIDevice.current.name
@@ -252,59 +256,6 @@ extension MpcCoreKit {
         }
         return nil
     }
-    
-//    public async enableMFA(enableMFAParams: EnableMFAParams, recoveryFactor = true): Promise<string> {
-//      this.checkReady();
-//
-//      const hashedFactorKey = getHashedPrivateKey(this.state.oAuthKey, this.options.hashedFactorNonce);
-//      if (!(await this.checkIfFactorKeyValid(hashedFactorKey))) {
-//        if (this.tKey._localMetadataTransitions[0].length) throw new Error("CommitChanges are required before enabling MFA");
-//        throw new Error("MFA already enabled");
-//      }
-//
-//      try {
-//        let browserData;
-//
-//        if (this.isNodejsOrRN(this.options.uxMode)) {
-//          browserData = {
-//            browserName: "Node Env",
-//            browserVersion: "",
-//            deviceName: "nodejs",
-//          };
-//        } else {
-//          // try {
-//          const browserInfo = bowser.parse(navigator.userAgent);
-//          const browserName = `${browserInfo.browser.name}`;
-//          browserData = {
-//            browserName,
-//            browserVersion: browserInfo.browser.version,
-//            deviceName: browserInfo.os.name,
-//          };
-//        }
-//        const deviceFactorKey = new BN(await this.createFactor({ shareType: TssShareType.DEVICE, additionalMetadata: browserData }), "hex");
-//        if (this.currentStorage instanceof AsyncStorage) {
-//          asyncStoreFactor(deviceFactorKey, this, this.options.asyncStorageKey);
-//        } else {
-//          storeWebBrowserFactor(deviceFactorKey, this, this.options.storageKey);
-//        }
-//        await this.inputFactorKey(new BN(deviceFactorKey, "hex"));
-//
-//        const hashedFactorPub = getPubKeyPoint(hashedFactorKey);
-//        await this.deleteFactor(hashedFactorPub, hashedFactorKey);
-//        await this.deleteMetadataShareBackup(hashedFactorKey);
-//
-//        // only recovery factor = true
-//        if (recoveryFactor) {
-//          const backupFactorKey = await this.createFactor({ shareType: TssShareType.RECOVERY, ...enableMFAParams });
-//          return backupFactorKey;
-//        }
-//        // update to undefined for next major release
-//        return "";
-//      } catch (err: unknown) {
-//        log.error("error enabling MFA", err);
-//        throw new Error((err as Error).message);
-//      }
-//    }
     
     private func bootstrapTssClient (selected_tag: String ) async throws -> (TSSClient, [String: String]) {
         
