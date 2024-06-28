@@ -223,18 +223,18 @@ extension MpcCoreKit {
         try await TssModule.add_factor_pub(threshold_key: threshold_key, tss_tag: selectedTag, factor_key: factorKey, auth_signatures: sigs, new_factor_pub: newFactorPub, new_tss_index: tssShareIndex.toInt32(), nodeDetails: nodeDetails!, torusUtils: torusUtils)
     }
     
-    public mutating func enableMFA ( enableMFA : enableMFARecoveryFactor = .init(), recoveryFactor : Bool = true ) async throws -> String? {
+    public mutating func enableMFA ( enableMFA : enableMFARecoveryFactor = .init()) async throws {
         if self.appState.metadataPubKey == nil {
             throw "invalid metadataPubKey"
         }
-       
+        
         let hashFactorKey = try self.getHashKey()
         let currentFactor = try self.getCurrentFactorKey()
         
         if ( currentFactor != hashFactorKey ) {
             throw RuntimeError("Current factorKey should be HashFactor")
         }
-            
+        
         let additionalDeviceMetadata = await [
             "device" : UIDevice.current.model,
             "name" : UIDevice.current.name
@@ -249,12 +249,12 @@ extension MpcCoreKit {
         // delete hash factor key
         let hashFactorPub = try curveSecp256k1.SecretKey(hex: hashFactorKey).toPublic().serialize(compressed: true)
         try await self.deleteFactor(deleteFactorPub: hashFactorPub, deleteFactorKey: hashFactorKey)
-        
-        if recoveryFactor {
-            let recovery = try await self.createFactor(tssShareIndex: .RECOVERY, factorKey: enableMFA.factorKey, factorDescription: enableMFA.factorTypeDescription, additionalMetadata: enableMFA.additionalMetadata)
-            return recovery
-        }
-        return nil
+    }
+    
+    public mutating func enableMFAWithRecoveryFactor ( enableMFA : enableMFARecoveryFactor = .init()) async throws -> String {
+        try await self.enableMFA()
+        let recovery = try await self.createFactor(tssShareIndex: .RECOVERY, factorKey: enableMFA.factorKey, factorDescription: enableMFA.factorTypeDescription, additionalMetadata: enableMFA.additionalMetadata)
+        return recovery
     }
     
     private func bootstrapTssClient (selected_tag: String ) async throws -> (TSSClient, [String: String]) {
