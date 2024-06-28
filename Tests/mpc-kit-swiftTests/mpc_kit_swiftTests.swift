@@ -103,36 +103,21 @@ final class mpc_kit_swiftTests: XCTestCase {
         try await coreKitInstance.resetAccount()
     }
     
-    func testExample() async throws {
-        // XCTest Documentation
-        // https://developer.apple.com/documentation/xctest
-
-        // Defining Test Cases and Test Methods
-        // https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods
+    func testLoginFromWebAccount() async throws {
         
-        let email = "testiosEmail004"
+        let email = "testios002"
         let verifier = "torus-test-health"
         let clientId = "torus-test-health"
-        try await resetMPC(email: email, verifier: verifier, clientId: clientId)
+//        try await resetMPC(email: email, verifier: verifier, clientId: clientId)
         
         let memoryStorage = MemoryStorage()
-        var coreKitInstance = MpcCoreKit( web3AuthClientId: clientId, web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage)
+        var coreKitInstance = MpcCoreKit( web3AuthClientId: clientId, web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage, manualSync: true)
         
+                
         let data = try  mockLogin2(email: email)
         let token = data
-//        let dataObj = try JSONSerialization.jsonObject(with: data) as! [String: String]
-        
-//        let token = dataObj["token"]!
-        
-//        if let jsonString = String(data: data, encoding: .utf8) {
-//                  print("Response: \(jsonString)")
-//                  // Parse JSON response data here using JSONDecoder or other methods
-//              }
-//        let jwtParams : IdTokenLoginParams = .init(verifier: verifier, verifierId: email, idToken: token, domain: "com.ios.mpc" )
-//        let keyDetails = try await coreKitInstance.login(loginProvider: .jwt, verifier: "test", jwtParams: jwtParams.toDictionary())
-        
 
-        let keyDetails = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
+        let _ = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
         
         let hash = try keccak256(data: Data(hex: "010203040506"))
         let signatures = try await coreKitInstance.tssSign(message: hash)
@@ -142,15 +127,15 @@ final class mpc_kit_swiftTests: XCTestCase {
         
         let deleteFactorPub = try curveSecp256k1.SecretKey(hex: newFactor).toPublic().serialize(compressed: true)
         try await coreKitInstance.deleteFactor(deleteFactorPub: deleteFactorPub, deleteFactorKey: newFactor)
-        print (keyDetails)
         
     }
     
-    func testRecoveryFactor() async throws  {
+    func testMFARecoveryFactor() async throws  {
         
         let email = "testiosEmail11mfa"
         let verifier = "torus-test-health"
         let clientId = "torus-test-health"
+        // reset Account
         try await resetMPC(email: email, verifier: verifier, clientId: clientId)
         let memoryStorage = MemoryStorage()
         var coreKitInstance = MpcCoreKit( web3AuthClientId: clientId, web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage)
@@ -158,10 +143,9 @@ final class mpc_kit_swiftTests: XCTestCase {
         let token = data
         
         
-        let keyDetails = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
+        _ = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
 
-        let hash = try Data(hex: "010203040506").sha3(varient:Variants.KECCAK256)
-        guard let recoveryFactor = try await coreKitInstance.enableMFA() else { throw "empty factor" };
+        let recoveryFactor = try await coreKitInstance.enableMFAWithRecoveryFactor();
 
         let memoryStorage2 = MemoryStorage()
         var coreKitInstance2 = MpcCoreKit( web3AuthClientId: "torus-test-health", web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage2);
@@ -170,6 +154,8 @@ final class mpc_kit_swiftTests: XCTestCase {
         
         
         let keyDetails2 = try await coreKitInstance2.loginWithJwt(verifier: verifier, verifierId: email, idToken: token2)
+        
+        XCTAssertEqual(keyDetails2.requiredFactors, 1)
         
         try await coreKitInstance2.inputFactor(factorKey: recoveryFactor)
         let result = try await coreKitInstance.createFactor(tssShareIndex: .DEVICE, factorKey: nil, factorDescription: .DeviceShare)

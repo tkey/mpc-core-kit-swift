@@ -10,7 +10,10 @@ import CustomAuth
 import TorusUtils
 import tssClientSwift
 import tkey
+#if canImport(curveSecp256k1)
 import curveSecp256k1
+#endif
+
 import BigInt
 import UIKit
 
@@ -220,13 +223,17 @@ extension MpcCoreKit {
         try await TssModule.add_factor_pub(threshold_key: threshold_key, tss_tag: selectedTag, factor_key: factorKey, auth_signatures: sigs, new_factor_pub: newFactorPub, new_tss_index: tssShareIndex.toInt32(), nodeDetails: nodeDetails!, torusUtils: torusUtils)
     }
     
-    public mutating func enableMFA ( enableMFA : enableMFARecoveryFactor = .init(), recoveryFactor : Bool = true ) async throws -> String? {
-//        self.checkHashFactor()
-        guard let metadataPubKey = self.appState.metadataPubKey else {
+    public mutating func enableMFA ( enableMFA : enableMFARecoveryFactor = .init()) async throws {
+        if self.appState.metadataPubKey == nil {
             throw "invalid metadataPubKey"
         }
-       
+        
         let hashFactorKey = try self.getHashKey()
+        let currentFactor = try self.getCurrentFactorKey()
+        
+        if ( currentFactor != hashFactorKey ) {
+            throw RuntimeError("Current factorKey should be HashFactor")
+        }
         
         let additionalDeviceMetadata = await [
             "device" : UIDevice.current.model,
@@ -242,66 +249,13 @@ extension MpcCoreKit {
         // delete hash factor key
         let hashFactorPub = try curveSecp256k1.SecretKey(hex: hashFactorKey).toPublic().serialize(compressed: true)
         try await self.deleteFactor(deleteFactorPub: hashFactorPub, deleteFactorKey: hashFactorKey)
-        
-        if recoveryFactor {
-            let recovery = try await self.createFactor(tssShareIndex: .RECOVERY, factorKey: enableMFA.factorKey, factorDescription: enableMFA.factorTypeDescription, additionalMetadata: enableMFA.additionalMetadata)
-            return recovery
-        }
-        return nil
     }
     
-//    public async enableMFA(enableMFAParams: EnableMFAParams, recoveryFactor = true): Promise<string> {
-//      this.checkReady();
-//
-//      const hashedFactorKey = getHashedPrivateKey(this.state.oAuthKey, this.options.hashedFactorNonce);
-//      if (!(await this.checkIfFactorKeyValid(hashedFactorKey))) {
-//        if (this.tKey._localMetadataTransitions[0].length) throw new Error("CommitChanges are required before enabling MFA");
-//        throw new Error("MFA already enabled");
-//      }
-//
-//      try {
-//        let browserData;
-//
-//        if (this.isNodejsOrRN(this.options.uxMode)) {
-//          browserData = {
-//            browserName: "Node Env",
-//            browserVersion: "",
-//            deviceName: "nodejs",
-//          };
-//        } else {
-//          // try {
-//          const browserInfo = bowser.parse(navigator.userAgent);
-//          const browserName = `${browserInfo.browser.name}`;
-//          browserData = {
-//            browserName,
-//            browserVersion: browserInfo.browser.version,
-//            deviceName: browserInfo.os.name,
-//          };
-//        }
-//        const deviceFactorKey = new BN(await this.createFactor({ shareType: TssShareType.DEVICE, additionalMetadata: browserData }), "hex");
-//        if (this.currentStorage instanceof AsyncStorage) {
-//          asyncStoreFactor(deviceFactorKey, this, this.options.asyncStorageKey);
-//        } else {
-//          storeWebBrowserFactor(deviceFactorKey, this, this.options.storageKey);
-//        }
-//        await this.inputFactorKey(new BN(deviceFactorKey, "hex"));
-//
-//        const hashedFactorPub = getPubKeyPoint(hashedFactorKey);
-//        await this.deleteFactor(hashedFactorPub, hashedFactorKey);
-//        await this.deleteMetadataShareBackup(hashedFactorKey);
-//
-//        // only recovery factor = true
-//        if (recoveryFactor) {
-//          const backupFactorKey = await this.createFactor({ shareType: TssShareType.RECOVERY, ...enableMFAParams });
-//          return backupFactorKey;
-//        }
-//        // update to undefined for next major release
-//        return "";
-//      } catch (err: unknown) {
-//        log.error("error enabling MFA", err);
-//        throw new Error((err as Error).message);
-//      }
-//    }
+    public mutating func enableMFAWithRecoveryFactor ( enableMFA : enableMFARecoveryFactor = .init()) async throws -> String {
+        try await self.enableMFA()
+        let recovery = try await self.createFactor(tssShareIndex: .RECOVERY, factorKey: enableMFA.factorKey, factorDescription: enableMFA.factorTypeDescription, additionalMetadata: enableMFA.additionalMetadata)
+        return recovery
+    }
     
     private func bootstrapTssClient (selected_tag: String ) async throws -> (TSSClient, [String: String]) {
         

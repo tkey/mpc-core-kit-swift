@@ -13,9 +13,9 @@ import TorusUtils
 import FetchNodeDetails
 import SingleFactorAuth
 
-
-
+#if canImport(curveSecp256k1)
 import curveSecp256k1
+#endif
 
 public struct MpcCoreKit  {
     
@@ -55,8 +55,8 @@ public struct MpcCoreKit  {
     
     
     // init
-    public init( web3AuthClientId : String , web3AuthNetwork: Web3AuthNetwork, disableHashFactor : Bool = false, localStorage: ILocalStorage ) {
-        self.option = .init(disableHashFactor: disableHashFactor , Web3AuthClientId: web3AuthClientId, network: web3AuthNetwork)
+    public init( web3AuthClientId : String , web3AuthNetwork: Web3AuthNetwork, disableHashFactor : Bool = false, localStorage: ILocalStorage, manualSync: Bool = false ) {
+        self.option = .init(disableHashFactor: disableHashFactor , Web3AuthClientId: web3AuthClientId, network: web3AuthNetwork, manualSync: manualSync)
         self.appState = CoreKitAppState.init()
         
         self.network = web3AuthNetwork
@@ -69,11 +69,6 @@ public struct MpcCoreKit  {
         self.coreKitStorage = .init(storeKey: self.storeKey, storage: localStorage)
 
     }
-    
-//    public mutating func rehydrate() async throws {
-//        let appState : CoreKitAppState = try await self.coreKitStorage.get(key: self.localAppStateKey)
-    //        _
-//    }
     
     public mutating func updateAppState( state: CoreKitAppState) async throws {
         // mutating self
@@ -164,7 +159,7 @@ public struct MpcCoreKit  {
             requiredFactors: finalKeyDetails.required_shares,
             threshold: finalKeyDetails.threshold,
             shareDescriptions: finalKeyDetails.share_descriptions,
-            total_shares: finalKeyDetails.total_shares,
+            totalShares: finalKeyDetails.total_shares,
             totalFactors: UInt32(factorsCount) + 1
         )
         return keyDetails
@@ -237,7 +232,7 @@ public struct MpcCoreKit  {
             storage_layer: storage_layer,
             service_provider: service_provider,
             enable_logging: true,
-            manual_sync: false,
+            manual_sync: self.option.manualSync,
             rss_comm: rss_comm)
 
         let key_details = try await thresholdKey.initialize(never_initialize_new_key: false, include_local_metadata_transitions: false)
@@ -254,12 +249,14 @@ public struct MpcCoreKit  {
         // to add tss pub details to corekit details
         let finalKeyDetails = try thresholdKey.get_key_details()
         let tssTag = try TssModule.get_tss_tag(threshold_key: thresholdKey)
-        let tssPubKey = try? await TssModule.get_tss_pub_key(threshold_key: thresholdKey, tss_tag: tssTag)
-                return .init(tssPubKey: tssPubKey ?? "", metadataPubKey: try finalKeyDetails.pub_key.getPublicKey(format: .EllipticCompress), requiredFactors: finalKeyDetails.required_shares, threshold: finalKeyDetails.threshold, shareDescriptions: finalKeyDetails.share_descriptions, total_shares: finalKeyDetails.total_shares, totalFactors: 0)
+        
+        let tssPubKey = try await TssModule.get_tss_pub_key(threshold_key: thresholdKey, tss_tag: tssTag) 
+        
+        return .init(tssPubKey: tssPubKey, metadataPubKey: try finalKeyDetails.pub_key.getPublicKey(format: .EllipticCompress), requiredFactors: finalKeyDetails.required_shares, threshold: finalKeyDetails.threshold, shareDescriptions: finalKeyDetails.share_descriptions, totalShares: finalKeyDetails.total_shares, totalFactors: 0)
     }
     
     private mutating func existingUser() async throws {
-        guard let threshold_key = self.tkey else {
+        guard self.tkey != nil else {
             throw "Invalid tkey"
         }
         
@@ -385,6 +382,14 @@ public struct MpcCoreKit  {
         let selectedTag = try TssModule.get_tss_tag(threshold_key: threshold_key)
        
         return try await TssModule.get_tss_pub_key(threshold_key: threshold_key, tss_tag: selectedTag)
+    }
+    
+    public func commitChanges() async throws {
+        // create a copy syncMetadata
+        guard let tkey = self.tkey else {
+            throw RuntimeError("Not yet initalize")
+        }
+        try await tkey.sync_local_metadata_transistions()
     }
     
     // To remove reset account function

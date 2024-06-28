@@ -24,6 +24,7 @@ public struct CoreKitOptions {
     public var disableHashFactor : Bool
     public var Web3AuthClientId : String
     public var network : Web3AuthNetwork
+    public var manualSync: Bool
 }
 
 public struct CoreKitAppState :Codable, Equatable {
@@ -66,7 +67,7 @@ public struct MpcKeyDetails : Codable {
     public let requiredFactors: Int32
     public let threshold: UInt32
     public let shareDescriptions : String
-    public let total_shares: UInt32
+    public let totalShares: UInt32
     public let totalFactors: UInt32?
 //    public let requiredFactors: String
 }
