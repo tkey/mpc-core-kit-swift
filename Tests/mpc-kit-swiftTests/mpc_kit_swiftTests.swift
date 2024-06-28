@@ -145,7 +145,7 @@ final class mpc_kit_swiftTests: XCTestCase {
         
         _ = try await coreKitInstance.loginWithJwt(verifier: verifier, verifierId: email, idToken: token)
 
-        let recoveryFactor = try await coreKitInstance.enableMFA();
+        let recoveryFactor = try await coreKitInstance.enableMFAWithRecoveryFactor();
 
         let memoryStorage2 = MemoryStorage()
         var coreKitInstance2 = MpcCoreKit( web3AuthClientId: "torus-test-health", web3AuthNetwork: Web3AuthNetwork.SAPPHIRE_DEVNET, disableHashFactor: false, localStorage: memoryStorage2);
@@ -157,7 +157,7 @@ final class mpc_kit_swiftTests: XCTestCase {
         
         XCTAssertEqual(keyDetails2.requiredFactors, 1)
         
-        try await coreKitInstance2.inputFactor(factorKey: recoveryFactor!)
+        try await coreKitInstance2.inputFactor(factorKey: recoveryFactor)
         let result = try await coreKitInstance.createFactor(tssShareIndex: .DEVICE, factorKey: nil, factorDescription: .DeviceShare)
         
         let getKeyDetails = try await coreKitInstance2.getKeyDetails()
